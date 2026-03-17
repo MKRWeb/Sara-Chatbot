@@ -7,15 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
+  <!-- Three.js r128 for WebGL rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ░░ CUSTOM CURSOR ░░ -->
+  <!-- Custom cursor -->
   <div id="c-dot"></div>
   <div id="c-ring"></div>
 
-  <!-- ░░ NAV ░░ -->
+  <!-- Nav overlay -->
   <nav id="main-nav">
     <span class="nav-logo">Sara</span>
     <ul class="nav-links">
@@ -25,154 +27,92 @@
     </ul>
   </nav>
 
-  <!-- ════════════════════════════════════════
-       SCENE 1 — ABOVE WATER (pink sky world)
-  ════════════════════════════════════════ -->
-  <div class="scene" id="scene-sky">
-    <canvas id="sky-canvas"></canvas>
+  <!-- ══════════════════════════════════
+       INTRO LAYER
+       WebGL canvas fills entire screen.
+       HTML word-reveal layers on top.
+  ══════════════════════════════════ -->
+  <div id="intro-wrap">
 
-    <!-- Floating 3D-like CSS objects -->
-    <div class="float-world" id="float-world">
-      <!-- Stone column fragment -->
-      <div class="obj obj-column" id="obj-col">
-        <div class="col-body"></div>
-        <div class="col-cap"></div>
+    <!-- Main WebGL canvas: sky → underwater journey -->
+    <canvas id="main-canvas"></canvas>
+
+    <!-- Grain texture overlay (SVG filter) -->
+    <svg id="grain-svg" xmlns="http://www.w3.org/2000/svg">
+      <filter id="grain-filter" x="0%" y="0%" width="100%" height="100%"
+        color-interpolation-filters="linearRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.72"
+          numOctaves="4" seed="2" stitchTiles="stitch" result="noise"/>
+        <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
+        <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="blended"/>
+        <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grain-filter)" opacity="0.045"/>
+    </svg>
+
+    <!-- Vignette -->
+    <div id="vignette"></div>
+
+    <!-- Progress bar -->
+    <div id="prog-bar"><div id="prog-fill"></div></div>
+
+    <!-- Scene 1 headline -->
+    <div class="hl-stage" id="hl-1">
+      <div class="hl-line">
+        <span class="wm"><b class="w">When</b></span>
+        <span class="wm"><b class="w">the</b></span>
+        <span class="wm"><b class="w">world</b></span>
+        <span class="wm"><b class="w">gets</b></span>
       </div>
-      <!-- Stepping stones -->
-      <div class="obj obj-stone" id="obj-s1"></div>
-      <div class="obj obj-stone" id="obj-s2"></div>
-      <div class="obj obj-stone" id="obj-s3"></div>
-      <!-- Conch shell -->
-      <div class="obj obj-conch" id="obj-conch">
-        <div class="conch-body"></div>
-        <div class="conch-tip"></div>
+      <div class="hl-line">
+        <span class="wm italic"><b class="w">a&nbsp;little</b></span>
+        <span class="wm italic"><b class="w">too</b></span>
+        <span class="wm italic"><b class="w">loud.</b></span>
       </div>
-      <!-- Bubble / pearl sphere -->
-      <div class="obj obj-bubble" id="obj-b1"></div>
-      <div class="obj obj-bubble sm" id="obj-b2"></div>
-      <!-- Rock fragment -->
-      <div class="obj obj-rock" id="obj-rock"></div>
-      <!-- Oyster -->
-      <div class="obj obj-oyster" id="obj-oyster">
-        <div class="oyster-shell bottom"></div>
-        <div class="oyster-shell top"></div>
-        <div class="pearl"></div>
+    </div>
+
+    <!-- Scene 2 headline -->
+    <div class="hl-stage" id="hl-2">
+      <div class="hl-line center">
+        <span class="wm"><b class="w">And</b></span>
+        <span class="wm"><b class="w">you</b></span>
+        <span class="wm"><b class="w">just</b></span>
+        <span class="wm"><b class="w">need</b></span>
+      </div>
+      <div class="hl-line center">
+        <span class="wm italic"><b class="w">someone</b></span>
+        <span class="wm"><b class="w">to</b></span>
+        <span class="wm italic"><b class="w">listen.</b></span>
       </div>
     </div>
 
-    <!-- Water surface shimmer -->
-    <div id="water-surface"></div>
-
-    <!-- ── SCENE 1 HEADLINE (word-reveal) ── -->
-    <div class="headline-wrap" id="headline-sky">
-      <div class="reveal-line">
-        <span class="word-mask"><span class="word">When</span></span>
-        <span class="word-mask"><span class="word">the</span></span>
-        <span class="word-mask"><span class="word">world</span></span>
-        <span class="word-mask"><span class="word">gets</span></span>
+    <!-- Scene 3 headline -->
+    <div class="hl-stage" id="hl-3">
+      <div class="hl-line">
+        <span class="wm"><b class="w">No</b></span>
+        <span class="wm italic"><b class="w">judgment.</b></span>
       </div>
-      <div class="reveal-line">
-        <span class="word-mask italic-word"><span class="word italic">a little</span></span>
-        <span class="word-mask"><span class="word">too</span></span>
-        <span class="word-mask"><span class="word">loud.</span></span>
+      <div class="hl-line">
+        <span class="wm italic"><b class="w">No</b></span>
+        <span class="wm"><b class="w">pressure.</b></span>
       </div>
     </div>
-  </div>
 
-  <!-- ════════════════════════════════════════
-       SCENE 2 — WATER SURFACE / DIVE
-  ════════════════════════════════════════ -->
-  <div class="scene" id="scene-dive">
-    <canvas id="dive-canvas"></canvas>
-    <div id="water-ripple"></div>
-
-    <div class="headline-wrap centered" id="headline-dive">
-      <div class="reveal-line center">
-        <span class="word-mask"><span class="word">And</span></span>
-        <span class="word-mask"><span class="word">you</span></span>
-        <span class="word-mask"><span class="word">just</span></span>
-        <span class="word-mask"><span class="word">need</span></span>
-      </div>
-      <div class="reveal-line center">
-        <span class="word-mask italic-word"><span class="word italic">someone</span></span>
-        <span class="word-mask"><span class="word">to</span></span>
-        <span class="word-mask italic-word"><span class="word italic">listen.</span></span>
+    <!-- Scene 4 headline -->
+    <div class="hl-stage center-stage" id="hl-4">
+      <div class="hl-line center">
+        <span class="wm"><b class="w">Meet</b></span>
+        <span class="wm italic large"><b class="w">Sara.</b></span>
       </div>
     </div>
-  </div>
 
-  <!-- ════════════════════════════════════════
-       SCENE 3 — DEEP WATER (purple world)
-  ════════════════════════════════════════ -->
-  <div class="scene" id="scene-deep">
-    <canvas id="deep-canvas"></canvas>
+  </div><!-- /intro-wrap -->
 
-    <!-- God rays -->
-    <div id="god-rays">
-      <div class="ray" style="--rx:-20deg; --rl:15%"></div>
-      <div class="ray" style="--rx:-8deg;  --rl:30%"></div>
-      <div class="ray" style="--rx:0deg;   --rl:50%"></div>
-      <div class="ray" style="--rx:10deg;  --rl:68%"></div>
-      <div class="ray" style="--rx:22deg;  --rl:82%"></div>
-    </div>
-
-    <!-- Coral bed -->
-    <div id="coral-bed">
-      <div class="coral c1"></div>
-      <div class="coral c2"></div>
-      <div class="coral c3"></div>
-      <div class="coral c4"></div>
-      <div class="coral c5"></div>
-      <div class="coral c6"></div>
-    </div>
-
-    <!-- Rising bubbles -->
-    <div id="bubbles-rise">
-      <div class="rise-bubble" style="--bx:20%; --bd:0s;    --bs:1.1s"></div>
-      <div class="rise-bubble" style="--bx:35%; --bd:0.4s;  --bs:1.4s"></div>
-      <div class="rise-bubble" style="--bx:55%; --bd:0.2s;  --bs:1.0s"></div>
-      <div class="rise-bubble" style="--bx:70%; --bd:0.7s;  --bs:1.6s"></div>
-      <div class="rise-bubble" style="--bx:82%; --bd:0.1s;  --bs:1.2s"></div>
-    </div>
-
-    <div class="headline-wrap left" id="headline-deep">
-      <div class="reveal-line">
-        <span class="word-mask"><span class="word">No</span></span>
-        <span class="word-mask italic-word"><span class="word italic">judgment.</span></span>
-      </div>
-      <div class="reveal-line">
-        <span class="word-mask italic-word"><span class="word italic">No</span></span>
-        <span class="word-mask"><span class="word">pressure.</span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════
-       SCENE 4 — MEET SARA (final transition)
-  ════════════════════════════════════════ -->
-  <div class="scene" id="scene-meet">
-    <canvas id="meet-canvas"></canvas>
-
-    <div class="headline-wrap centered" id="headline-meet">
-      <div class="reveal-line center">
-        <span class="word-mask"><span class="word">A</span></span>
-        <span class="word-mask"><span class="word">quiet</span></span>
-        <span class="word-mask italic-word"><span class="word italic">place,</span></span>
-      </div>
-      <div class="reveal-line center">
-        <span class="word-mask"><span class="word">just</span></span>
-        <span class="word-mask"><span class="word">for</span></span>
-        <span class="word-mask italic-word"><span class="word italic">you.</span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════
-       SARA HOME PAGE
-  ════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════
+       SARA HOME
+  ══════════════════════════════════ -->
   <div id="sara-home" class="phase-off">
     <canvas id="home-canvas"></canvas>
-
     <div id="home-orbs">
       <div class="orb o1"></div>
       <div class="orb o2"></div>
@@ -180,128 +120,116 @@
     </div>
 
     <div id="home-card">
-      <div id="home-avatar-wrap">
-        <svg class="avatar-svg" viewBox="0 0 130 130">
+      <div id="av-wrap">
+        <svg class="av-ring-svg" viewBox="0 0 130 130">
           <circle cx="65" cy="65" r="58" fill="none"
-            stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-          <circle id="avatar-arc" cx="65" cy="65" r="58"
+            stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <circle id="av-arc" cx="65" cy="65" r="58"
             fill="none" stroke="rgba(255,255,255,0.5)"
             stroke-width="1.2" stroke-dasharray="55 310"
             stroke-linecap="round"/>
         </svg>
-        <div id="home-avatar">S</div>
-        <div id="home-online"></div>
+        <div id="av-face">S</div>
+        <div id="av-dot"></div>
       </div>
 
       <p id="home-eyebrow">MEET SARA</p>
+      <h1 id="home-h1">Someone to<br><em>talk to.</em></h1>
+      <p id="home-sub">A safe, quiet space. No judgment. No pressure.</p>
 
-      <h1 id="home-headline">
-        Someone to<br><em>talk to.</em>
-      </h1>
-
-      <p id="home-desc">A safe, quiet space — no judgment, no pressure.</p>
-
-      <div id="home-status-row">
+      <div id="home-status">
         <span id="home-pulse"></span>
-        <span id="home-status-label">Online · Listening with care</span>
+        <span>Online · Listening with care</span>
       </div>
 
       <button id="say-hello-btn">
-        <span>Begin conversation</span>
-        <span id="btn-arrow">↗</span>
-        <div id="btn-glow"></div>
+        Begin conversation
+        <span id="btn-arr">↗</span>
       </button>
-
-      <p id="home-footnote">Completely private · No account needed</p>
+      <p id="home-legal">Completely private · No account needed</p>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════
-       CHAT INTERFACE
-  ════════════════════════════════════════ -->
-  <div id="chat-interface" class="phase-off">
+  <!-- ══════════════════════════════════
+       CHAT
+  ══════════════════════════════════ -->
+  <div id="chat-wrap" class="phase-off">
+    <canvas id="chat-canvas"></canvas>
+    <div id="chat-orb1"></div>
+    <div id="chat-orb2"></div>
 
-    <!-- Living background -->
-    <div id="chat-bg-layer">
-      <canvas id="chat-canvas"></canvas>
-      <div id="chat-orb1"></div>
-      <div id="chat-orb2"></div>
-      <div id="chat-trees">
-        <svg viewBox="0 0 1440 260" preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg">
-          <g fill="rgba(30,50,32,0.6)">
-            <ellipse cx="80"  cy="200" rx="55" ry="85"/><rect x="74"  y="212" width="12" height="48"/>
-            <ellipse cx="220" cy="185" rx="65" ry="98"/><rect x="214" y="200" width="12" height="60"/>
-            <ellipse cx="370" cy="196" rx="50" ry="78"/><rect x="364" y="209" width="12" height="51"/>
-            <ellipse cx="1075" cy="190" rx="60" ry="90"/><rect x="1069" y="205" width="12" height="55"/>
-            <ellipse cx="1225" cy="188" rx="55" ry="82"/><rect x="1219" y="202" width="12" height="58"/>
-            <ellipse cx="1380" cy="198" rx="48" ry="74"/><rect x="1374" y="211" width="12" height="49"/>
-          </g>
-          <g fill="rgba(15,28,16,0.8)">
-            <ellipse cx="25"   cy="240" rx="48" ry="72"/><rect x="19"  y="250" width="12" height="18"/>
-            <ellipse cx="155"  cy="228" rx="60" ry="90"/><rect x="149" y="242" width="12" height="26"/>
-            <ellipse cx="490"  cy="234" rx="52" ry="78"/><rect x="484" y="247" width="12" height="21"/>
-            <ellipse cx="950"  cy="230" rx="58" ry="84"/><rect x="944" y="244" width="12" height="24"/>
-            <ellipse cx="1300" cy="236" rx="50" ry="76"/><rect x="1294" y="249" width="12" height="19"/>
-            <ellipse cx="1430" cy="232" rx="54" ry="80"/><rect x="1424" y="246" width="12" height="22"/>
-          </g>
-          <path d="M0 250 Q360 230 720 248 Q1080 262 1440 248 L1440 260 L0 260Z"
-            fill="rgba(10,20,12,0.9)"/>
-        </svg>
-      </div>
-      <div id="chat-mist"></div>
+    <!-- Tree silhouettes -->
+    <div id="chat-trees">
+      <svg viewBox="0 0 1440 240" preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <g fill="rgba(20,40,22,0.7)">
+          <ellipse cx="70"   cy="185" rx="52" ry="80"/><rect x="64"  y="196" width="12" height="44"/>
+          <ellipse cx="210"  cy="172" rx="62" ry="94"/><rect x="204" y="187" width="12" height="53"/>
+          <ellipse cx="355"  cy="180" rx="48" ry="74"/><rect x="349" y="193" width="11" height="47"/>
+          <ellipse cx="1085" cy="175" rx="58" ry="86"/><rect x="1079" y="190" width="12" height="50"/>
+          <ellipse cx="1230" cy="170" rx="52" ry="78"/><rect x="1224" y="184" width="12" height="56"/>
+          <ellipse cx="1385" cy="182" rx="46" ry="72"/><rect x="1379" y="195" width="11" height="45"/>
+        </g>
+        <g fill="rgba(8,18,10,0.85)">
+          <ellipse cx="18"   cy="225" rx="45" ry="68"/><rect x="12"  y="235" width="12" height="15"/>
+          <ellipse cx="148"  cy="215" rx="57" ry="85"/><rect x="142" y="228" width="12" height="22"/>
+          <ellipse cx="480"  cy="220" rx="50" ry="75"/><rect x="474" y="232" width="12" height="18"/>
+          <ellipse cx="960"  cy="218" rx="55" ry="80"/><rect x="954" y="231" width="12" height="20"/>
+          <ellipse cx="1310" cy="222" rx="48" ry="73"/><rect x="1304" y="234" width="12" height="16"/>
+          <ellipse cx="1432" cy="219" rx="52" ry="78"/><rect x="1426" y="232" width="12" height="19"/>
+        </g>
+        <path d="M0 238 Q360 220 720 236 Q1080 250 1440 236 L1440 240 L0 240Z"
+          fill="rgba(5,12,6,0.92)"/>
+      </svg>
     </div>
+    <div id="chat-mist"></div>
 
-    <!-- Chat window -->
-    <div id="chat-window">
-      <header id="chat-header">
-        <div id="ch-av-wrap">
-          <div id="ch-av">S</div>
-          <div id="ch-dot"></div>
+    <div id="chat-win">
+      <header id="chat-hdr">
+        <div id="hdr-av-w">
+          <div id="hdr-av">S</div>
+          <div id="hdr-dot"></div>
         </div>
-        <div id="ch-info">
-          <div id="ch-name">Sara</div>
-          <div id="ch-sub">
-            <span id="ch-status-dot"></span>
-            <span id="ch-status-text">Listening</span>
+        <div id="hdr-info">
+          <div id="hdr-name">Sara</div>
+          <div id="hdr-sub">
+            <span id="hdr-sdot"></span>
+            <span id="hdr-stxt">Listening</span>
           </div>
         </div>
-        <div id="ch-mood">
-          <span id="mood-icon">🌿</span>
-          <span id="mood-word">Calm</span>
+        <div id="hdr-mood">
+          <span id="mood-ico">🌿</span>
+          <span id="mood-lbl">Calm</span>
         </div>
       </header>
 
-      <div id="messages" role="log" aria-live="polite">
+      <div id="msgs" role="log" aria-live="polite">
         <div class="day-sep"><span>Today</span></div>
       </div>
 
-      <!-- Wave (thinking) -->
-      <div id="wave-think">
-        <span class="wb"></span><span class="wb"></span>
-        <span class="wb"></span><span class="wb"></span>
-        <span class="wb"></span><span class="wb"></span>
-        <span class="wb"></span>
+      <!-- Voice wave (thinking indicator) -->
+      <div id="vwave">
+        <span class="vb"></span><span class="vb"></span><span class="vb"></span>
+        <span class="vb"></span><span class="vb"></span><span class="vb"></span>
+        <span class="vb"></span>
       </div>
 
-      <!-- Quick chips -->
-      <div id="chips-row">
+      <!-- Chips -->
+      <div id="chips">
         <button class="chip" data-msg="I'm feeling really anxious today">😶 Anxious</button>
-        <button class="chip" data-msg="I just need to vent right now">💬 Need to vent</button>
+        <button class="chip" data-msg="I just need to vent right now">💬 Vent</button>
         <button class="chip" data-msg="I'm feeling really lonely">🌙 Lonely</button>
         <button class="chip" data-msg="I had such a rough day">🍂 Rough day</button>
         <button class="chip" data-msg="I can't stop overthinking everything">🌀 Overthinking</button>
         <button class="chip" data-msg="I'm feeling grateful today">🌻 Grateful</button>
       </div>
 
-      <!-- Input -->
       <div id="input-row">
-        <textarea id="chat-input"
-          placeholder="Say anything…"
+        <textarea id="chat-in" placeholder="Say anything…"
           rows="1" autocomplete="off" spellcheck="false"></textarea>
         <button id="send-btn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="12 5 19 12 12 19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -310,10 +238,10 @@
     </div>
   </div>
 
-  <!-- ░░ FAREWELL ░░ -->
+  <!-- Farewell -->
   <div id="farewell" class="phase-off">
-    <div id="farewell-inner">
-      <div id="farewell-glyph">✦</div>
+    <div id="fw-inner">
+      <div id="fw-glyph">✦</div>
       <h2>Take all the time you need.</h2>
       <p><em>I'll be right here whenever you return.</em></p>
     </div>
