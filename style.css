@@ -136,7 +136,7 @@ h1 em { color: #d1497b; font-style: italic; }
 /* --- Farewell Overlay --- */
 #farewell-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.95); /* Soft white fog */
     backdrop-filter: blur(10px);
     display: flex; justify-content: center; align-items: center;
     z-index: 20; opacity: 0; pointer-events: none;
@@ -149,4 +149,4 @@ h1 em { color: #d1497b; font-style: italic; }
 #farewell-overlay em { color: #d1497b; font-style: italic; }
 
 @media (max-width: 768px) { h1 { font-size: 2.2rem; } #farewell-overlay h2 { font-size: 1.8rem; padding: 20px; } }
-    
+                                                           
