@@ -1,88 +1,109 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Oceanic Setup ---
+    // --- 1. Three.js Oceanic Drone Setup ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
     
-    // Define our ocean colors (Surface vs Deep)
-    const surfaceColor = new THREE.Color(0x0077be);
-    const deepColor = new THREE.Color(0x000511);
+    // Deeper, vibrant reef colors
+    const surfaceColor = new THREE.Color(0x0088cc);
+    const deepReefColor = new THREE.Color(0x001e36);
     
     scene.background = surfaceColor;
-    scene.fog = new THREE.FogExp2(surfaceColor, 0.002);
+    scene.fog = new THREE.FogExp2(surfaceColor, 0.0015);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    // Start slightly above 0
-    camera.position.set(0, 0, 500); 
+    camera.position.set(0, 0, 400); 
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const floatingBubbles = [];
+    // --- 2. Crash-Proof Entity Generation (Texture Caching) ---
+    // We create the textures ONCE to save memory, preventing browser crashes.
+    const seaCreatures = [
+        { char: '🐠', type: 'fish', speed: 1.5, size: 20 },
+        { char: '🐟', type: 'fish', speed: 1.2, size: 18 },
+        { char: '🐡', type: 'fish', speed: 1.0, size: 22 },
+        { char: '🐙', type: 'creature', speed: 0.4, size: 30 },
+        { char: '🧜‍♀️', type: 'mermaid', speed: 0.6, size: 35 },
+        { char: '🐳', type: 'whale', speed: 0.2, size: 60 },
+        { char: '🐋', type: 'whale', speed: 0.3, size: 70 },
+        { char: '🪸', type: 'coral', speed: 0, size: 50 }
+    ];
 
-    // Create a realistic bubble texture using Canvas API
-    const createBubbleTexture = () => {
-        const bubbleCanvas = document.createElement('canvas');
-        bubbleCanvas.width = 64; bubbleCanvas.height = 64;
-        const ctx = bubbleCanvas.getContext('2d');
-        
-        // Bubble outline
-        ctx.beginPath();
-        ctx.arc(32, 32, 28, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Inner faint fill
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.fill();
-        
-        // Specular highlight (reflection)
-        ctx.beginPath();
-        ctx.arc(22, 22, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fill();
+    const textureCache = {};
 
-        return new THREE.CanvasTexture(bubbleCanvas);
-    };
+    function createEmojiTexture(char) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 128; tempCanvas.height = 128;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.font = '80px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(char, 64, 64);
+        return new THREE.CanvasTexture(tempCanvas);
+    }
 
-    const bubbleTexture = createBubbleTexture();
+    // Pre-load all textures into the cache
+    seaCreatures.forEach(creature => {
+        textureCache[creature.char] = createEmojiTexture(creature.char);
+    });
 
-    // Generate Bubbles
+    const floatingEntities = [];
+
+    // Spawn 150 entities scattered through the depth
     for(let i = 0; i < 150; i++) {
-        const material = new THREE.SpriteMaterial({ map: bubbleTexture, transparent: true, blending: THREE.AdditiveBlending });
+        // Pick a random creature
+        const template = seaCreatures[Math.floor(Math.random() * seaCreatures.length)];
+        
+        // Reuse the cached texture
+        const material = new THREE.SpriteMaterial({ map: textureCache[template.char], transparent: true });
         const sprite = new THREE.Sprite(material);
 
-        // Randomize positions in a wide volume
-        sprite.position.set(
-            (Math.random() - 0.5) * 1000, 
-            (Math.random() - 0.5) * -2500, // Spread them deep down
-            (Math.random() - 0.5) * 800
-        );
+        let yPos, xPos, zPos;
         
-        const scaleBase = Math.random() * 8 + 4;
-        sprite.scale.set(scaleBase, scaleBase, 1);
+        // Corals stay at the bottom of the reef, others swim everywhere
+        if (template.type === 'coral') {
+            yPos = -2200 - Math.random() * 400; // Ocean floor
+        } else {
+            yPos = (Math.random() - 0.5) * -2500; // Scattered depths
+        }
         
-        // Custom data for bubble animation
+        xPos = (Math.random() - 0.5) * 1200;
+        zPos = (Math.random() - 0.5) * 800 - 100;
+
+        sprite.position.set(xPos, yPos, zPos);
+        
+        // Add some random size variance
+        const sizeVariance = template.size * (0.8 + Math.random() * 0.4);
+        sprite.scale.set(sizeVariance, sizeVariance, 1);
+        
+        // Flip sprites horizontally if they are swimming left
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        if (direction === -1 && template.type !== 'coral') {
+            sprite.material.rotation = Math.PI; // Flip emoji
+            sprite.material.needsUpdate = true;
+        }
+
         sprite.userData = { 
-            floatSpeed: Math.random() * 1.5 + 0.5, 
-            wobbleSpeed: Math.random() * 0.02 + 0.01,
-            wobbleOffset: Math.random() * Math.PI * 2,
-            baseX: sprite.position.x
+            type: template.type,
+            speedX: direction * template.speed,
+            baseY: yPos,
+            bobSpeed: Math.random() * 2 + 1,
+            bobOffset: Math.random() * Math.PI * 2
         };
 
         scene.add(sprite);
-        floatingBubbles.push(sprite);
+        floatingEntities.push(sprite);
     }
 
-    // --- 2. Auto-Animation & Diving Logic ---
+    // --- 3. Auto-Animation & Drone Diving Logic ---
     let autoProgress = 0;   
     let targetCameraY = 0;
     let isChatting = false;
-    const maxDepth = -2500; // How deep the camera goes
+    const maxDepth = -2300; 
 
     const sections = [
         document.getElementById('sec-0'), document.getElementById('sec-1'),
@@ -132,33 +153,35 @@ document.addEventListener("DOMContentLoaded", () => {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        // Progression algorithm
         if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.0008; // Adjusted speed for a smooth dive
+            autoProgress += 0.0007; // Slow dive
             if (autoProgress > 1.0) autoProgress = 1.0;
             targetCameraY = autoProgress * maxDepth;
         }
 
-        // Smoothly move camera down
+        // Camera Drone Movement
         camera.position.y += (targetCameraY - camera.position.y) * 0.03;
+        // Add a gentle side-to-side drone sway
+        camera.position.x = Math.sin(time * 0.5) * 15;
 
-        // Dynamic Environment Colors (Lerping from surface to deep ocean)
-        const currentColor = surfaceColor.clone().lerp(deepColor, autoProgress);
+        // Dynamic Environment Colors
+        const currentColor = surfaceColor.clone().lerp(deepReefColor, autoProgress);
         scene.background = currentColor;
         scene.fog.color = currentColor;
-        scene.fog.density = 0.001 + (autoProgress * 0.002); // Fog gets thicker at depth
+        scene.fog.density = 0.001 + (autoProgress * 0.0015);
 
-        // Animate Bubbles
-        floatingBubbles.forEach((bubble) => {
-            // Rise up
-            bubble.position.y += bubble.userData.floatSpeed;
-            // Wobble side to side
-            bubble.position.x = bubble.userData.baseX + Math.sin(time * bubble.userData.wobbleSpeed + bubble.userData.wobbleOffset) * 20;
+        // Animate Entities
+        floatingEntities.forEach((entity) => {
+            if (entity.userData.type !== 'coral') {
+                // Swim left/right
+                entity.position.x += entity.userData.speedX;
+                
+                // Gentle bobbing up and down
+                entity.position.y = entity.userData.baseY + Math.sin(time * entity.userData.bobSpeed + entity.userData.bobOffset) * 10;
 
-            // Continuous loop: If a bubble goes too far above the camera, reset it deep below the camera
-            if (bubble.position.y > camera.position.y + 400) {
-                bubble.position.y = camera.position.y - 1000 - (Math.random() * 500);
-                bubble.position.x = bubble.userData.baseX = (Math.random() - 0.5) * 1000;
+                // Wrap around the screen horizontally so it feels infinite
+                if (entity.position.x > 800) entity.position.x = -800;
+                if (entity.position.x < -800) entity.position.x = 800;
             }
         });
 
@@ -167,14 +190,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     animate();
 
-    // Handle Window Resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 3. Chatbot NLP & Navigation History Logic ---
+    // --- 4. Chatbot Logic ---
     const sayHelloBtn = document.getElementById('say-hello-btn');
     const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
@@ -183,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const sendBtn = document.getElementById('send-btn');
     const farewellOverlay = document.getElementById('farewell-overlay');
 
-    // Entering Chat
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
@@ -191,13 +212,11 @@ document.addEventListener("DOMContentLoaded", () => {
         introSequence.style.display = 'none'; 
         chatInterface.classList.remove('hidden'); 
         
-        // Empty previous messages if reopening
         if(chatMessages.children.length === 0) {
-            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe here. I'm ready to listen whenever you are. 🌊💙"), 800);
+            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe here. I'm ready to listen whenever you are. 🪸💙"), 800);
         }
     });
 
-    // Safely exit chat without crashing
     window.addEventListener('popstate', (event) => {
         if (isChatting) {
             handleExitChat();
@@ -217,7 +236,6 @@ document.addEventListener("DOMContentLoaded", () => {
             
             setTimeout(() => {
                 introSequence.style.display = 'flex';
-                // Lock progress at 1 to keep them at the deep ocean "Say Hello" screen smoothly
                 autoProgress = 1.0; 
                 updateHTMLUI();
             }, 1000); 
