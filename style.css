@@ -1,0 +1,117 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c1 50%, #ffc0cb 100%);
+    font-family: 'Playfair Display', serif;
+    color: #333;
+    overflow-x: hidden;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: none; 
+}
+
+/* 3D Canvas Fixed to Background */
+#webgl-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Sets the height of the page to allow scrolling */
+.scroll-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 500vh; /* 5 screens tall */
+    z-index: 2;
+}
+
+/* Holds the text fixed in the center */
+.ui-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+/* Individual Text Sections */
+.text-section {
+    position: absolute;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8) translateZ(0);
+    will-change: opacity, transform;
+}
+
+h1 {
+    font-size: 3.5rem;
+    line-height: 1.2;
+    color: #2a1f22;
+    font-weight: 400;
+}
+
+h1 em {
+    color: #d1497b;
+    font-style: italic;
+}
+
+/* Final Chat Screen Styles */
+.final-section {
+    pointer-events: auto; /* Allows button clicking */
+}
+
+.subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    color: #d1497b;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.description {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: #555;
+    margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.chat-btn {
+    font-family: 'Inter', sans-serif;
+    background-color: #1a1a1a;
+    color: #fff;
+    border: none;
+    padding: 1rem 2.5rem;
+    font-size: 1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    pointer-events: auto;
+}
+
+.chat-btn:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 { font-size: 2.2rem; }
+    .scroll-container { height: 600vh; } /* Give a bit more scroll room on mobile */
+}
+
