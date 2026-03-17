@@ -2,12 +2,13 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body, html {
-    background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fdfbfb, #fad0c4);
+    /* Calm blue background gradient */
+    background: linear-gradient(-45deg, #80c1ff, #c2e0ff, #ffffff, #e6f2ff);
     background-size: 400% 400%;
     animation: gradientFlow 15s ease infinite;
     font-family: 'Playfair Display', serif;
-    color: #333;
-    overflow: hidden; 
+    color: #2a1f22;
+    overflow: hidden; /* Locks the screen for the auto-animation */
 }
 
 @keyframes gradientFlow {
@@ -16,40 +17,49 @@ body, html {
     100% { background-position: 0% 50%; }
 }
 
+/* 3D Canvas */
 #webgl-canvas {
-    position: fixed; top: 0; left: 0;
+    position: fixed;
+    top: 0; left: 0;
     width: 100vw; height: 100vh;
     z-index: 1; pointer-events: none;
 }
 
+/* UI Container fixed in center */
 .ui-container {
-    position: fixed; top: 0; left: 0;
+    position: fixed;
+    top: 0; left: 0;
     width: 100vw; height: 100vh;
     display: flex; justify-content: center; align-items: center;
     z-index: 2; pointer-events: none;
 }
 
 .text-section {
-    position: absolute; text-align: center;
-    opacity: 0; transform: scale(0.8);
+    position: absolute;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8);
     will-change: opacity, transform;
 }
 
 h1 { font-size: 3.5rem; line-height: 1.2; color: #2a1f22; font-weight: 400; }
-h1 em { color: #d1497b; font-style: italic; }
+h1 em { color: #3399ff; font-style: italic; } /* Calm blue accent */
 
 .subtitle {
-    font-family: 'Inter', sans-serif; font-size: 0.9rem; letter-spacing: 2px;
-    color: #d1497b; margin-bottom: 1rem; text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem; letter-spacing: 2px;
+    color: #3399ff; margin-bottom: 1rem; text-transform: uppercase; /* Calm blue accent */
 }
 
 .description {
-    font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #555;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem; color: #555;
     margin-top: 1.5rem; margin-bottom: 2.5rem;
 }
 
 .chat-btn {
-    font-family: 'Inter', sans-serif; background-color: #1a1a1a; color: #fff;
+    font-family: 'Inter', sans-serif;
+    background-color: #1a1a1a; color: #fff;
     border: none; padding: 1rem 2.5rem; font-size: 1rem;
     border-radius: 50px; cursor: pointer; pointer-events: auto;
     transition: transform 0.3s ease, background-color 0.3s;
@@ -60,31 +70,41 @@ h1 em { color: #d1497b; font-style: italic; }
 .hidden { display: none !important; }
 
 #chat-interface {
-    position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh; z-index: 10;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 10;
     display: flex; justify-content: center; align-items: center;
-    background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px);
-    opacity: 0; animation: fadeIn 1s forwards;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    animation: fadeIn 1s forwards;
 }
 
 @keyframes fadeIn { to { opacity: 1; } }
 
 .chat-window {
     width: 90%; max-width: 450px; height: 80vh;
-    background: rgba(255, 255, 255, 0.85); border-radius: 24px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 24px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    display: flex; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif;
+    display: flex; flex-direction: column;
+    overflow: hidden; font-family: 'Inter', sans-serif;
 }
 
 .chat-header {
-    display: flex; align-items: center; padding: 20px; 
-    background: rgba(255, 255, 255, 0.9); border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex; align-items: center;
+    padding: 20px; background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .avatar {
-    width: 45px; height: 45px; background: linear-gradient(135deg, #ff9a9e, #fecfef);
-    border-radius: 50%; display: flex; justify-content: center; align-items: center;
-    color: #d1497b; font-weight: 600; font-size: 1.2rem; margin-right: 15px;
+    width: 45px; height: 45px;
+    background: linear-gradient(135deg, #80c1ff, #c2e0ff); /* Blue gradient avatar */
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: #3399ff; font-weight: 600; font-size: 1.2rem; /* Blue accent color */
+    margin-right: 15px;
 }
 
 .header-info h2 { font-size: 1.2rem; margin: 0; color: #222; font-family: 'Playfair Display', serif; }
@@ -106,8 +126,20 @@ h1 em { color: #d1497b; font-style: italic; }
 .message.user { background: #1a1a1a; color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
 
 /* --- Animated Typing Dots --- */
-.typing-dots { display: flex; align-items: center; gap: 5px; padding: 4px 2px; }
-.typing-dots span { width: 6px; height: 6px; background-color: #888; border-radius: 50%; animation: blink 1.4s infinite both; }
+.typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 2px;
+}
+
+.typing-dots span {
+    width: 6px; height: 6px;
+    background-color: #888;
+    border-radius: 50%;
+    animation: blink 1.4s infinite both;
+}
+
 .typing-dots span:nth-child(1) { animation-delay: 0s; }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -117,18 +149,23 @@ h1 em { color: #d1497b; font-style: italic; }
     40% { opacity: 1; transform: scale(1.2); }
 }
 
+/* Input Area */
 .chat-input-area {
-    display: flex; padding: 15px; background: #fff; border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex; padding: 15px;
+    background: #fff; border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 #chat-input {
     flex: 1; border: none; background: #f5f5f5;
-    padding: 15px 20px; border-radius: 30px; font-size: 1rem; outline: none; font-family: 'Inter', sans-serif;
+    padding: 15px 20px; border-radius: 30px;
+    font-size: 1rem; outline: none; font-family: 'Inter', sans-serif;
 }
 
 #send-btn {
-    background: #d1497b; color: white; border: none; width: 50px; height: 50px;
-    border-radius: 50%; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center;
+    background: #3399ff; color: white; /* Blue accent color */
+    border: none; width: 50px; height: 50px;
+    border-radius: 50%; margin-left: 10px;
+    cursor: pointer; display: flex; justify-content: center; align-items: center;
     transition: transform 0.2s;
 }
 #send-btn:hover { transform: scale(1.1); }
@@ -146,6 +183,6 @@ h1 em { color: #d1497b; font-style: italic; }
     font-size: 2.2rem; color: #2a1f22; font-weight: 400; text-align: center;
     line-height: 1.4; animation: popIn 1s ease;
 }
-#farewell-overlay em { color: #d1497b; font-style: italic; }
+#farewell-overlay em { color: #3399ff; font-style: italic; } /* Blue accent color */
 
 @media (max-width: 768px) { h1 { font-size: 2.2rem; } #farewell-overlay h2 { font-size: 1.8rem; padding: 20px; } }
