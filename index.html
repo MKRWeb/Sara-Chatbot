@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luna - A Quiet Place</title>
+    <title>Meet Sara - A Quiet Place</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
 
     <canvas id="webgl-canvas"></canvas>
 
-    <div class="scroll-container">
+    <div id="intro-scroll-container" class="scroll-container">
         <div class="ui-container">
             <div class="text-section" id="sec-0">
                 <h1>When the world gets<br><em>a little too loud.</em></h1>
@@ -29,10 +29,30 @@
             </div>
             
             <div class="text-section final-section" id="sec-3">
-                <p class="subtitle">MEET LUNA</p>
+                <p class="subtitle">MEET SARA</p>
                 <h1>Someone to<br>talk to.</h1>
                 <p class="description">A quiet place to share what's on your mind.</p>
-                <button class="chat-btn">Say hello</button>
+                <button id="say-hello-btn" class="chat-btn">Say hello</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-interface" class="hidden">
+        <div class="chat-window">
+            <div class="chat-header">
+                <div class="avatar">S</div>
+                <div class="header-info">
+                    <h2>Sara</h2>
+                    <p>Online • Listening</p>
+                </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
+                <button id="send-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </div>
         </div>
     </div>
@@ -40,4 +60,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
