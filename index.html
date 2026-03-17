@@ -1,64 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet Sara - A Quiet Place</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sara — A Quiet Place</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <canvas id="webgl-canvas"></canvas>
+<!-- CURSOR -->
+<div id="cur"></div>
+<div id="cur2"></div>
 
-    <div id="intro-container" class="ui-container">
-        <div class="text-section" id="sec-0">
-            <h1>When the world gets<br><em>a little too loud.</em></h1>
+<!-- TIME LABEL -->
+<div id="time-label"></div>
+
+<!-- SOUND VIZ -->
+<div id="sound-hint">
+  <div class="sound-bars">
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  Nature
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHASE 1 — NATURE CINEMATIC
+══════════════════════════════════════════ -->
+<canvas id="nature-canvas"></canvas>
+
+<div id="cinematic-ui">
+  <div class="cslide" id="cs0">
+    <h1>When the world gets<br><em>a little too loud.</em></h1>
+  </div>
+  <div class="cslide" id="cs1">
+    <h1>And you just need<br>someone to listen.</h1>
+  </div>
+  <div class="cslide" id="cs2">
+    <h1>No judgment.<br><em>No pressure.</em></h1>
+  </div>
+  <div class="cslide" id="cs3">
+    <p class="eyebrow">A quiet place</p>
+    <h1>Meet Sara.</h1>
+    <p class="desc">She's been waiting for you.</p>
+  </div>
+</div>
+
+<!-- FOG WIPE -->
+<div id="fog-wipe"></div>
+
+<!-- ══════════════════════════════════════════
+     PHASE 2 — SARA HOME
+══════════════════════════════════════════ -->
+<div id="sara-home">
+  <canvas id="home-canvas"></canvas>
+  <div class="home-mist"></div>
+
+  <!-- SVG Tree silhouettes -->
+  <div class="tree-layer">
+    <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;position:absolute;bottom:0;">
+      <!-- Far trees (light) -->
+      <g fill="rgba(92,122,95,0.5)">
+        <ellipse cx="80" cy="260" rx="55" ry="80"/><rect x="73" y="270" width="14" height="50"/>
+        <ellipse cx="200" cy="240" rx="65" ry="95"/><rect x="193" y="255" width="14" height="65"/>
+        <ellipse cx="340" cy="255" rx="50" ry="75"/><rect x="334" y="265" width="12" height="55"/>
+        <ellipse cx="1100" cy="250" rx="60" ry="85"/><rect x="1094" y="265" width="12" height="55"/>
+        <ellipse cx="1240" cy="245" rx="55" ry="80"/><rect x="1234" y="258" width="12" height="62"/>
+        <ellipse cx="1380" cy="255" rx="50" ry="72"/><rect x="1374" y="268" width="12" height="52"/>
+      </g>
+      <!-- Near trees (dark) -->
+      <g fill="rgba(30,46,30,0.75)">
+        <ellipse cx="20" cy="295" rx="48" ry="70"/><rect x="13" y="302" width="14" height="22"/>
+        <ellipse cx="140" cy="280" rx="60" ry="88"/><rect x="133" y="292" width="14" height="30"/>
+        <ellipse cx="480" cy="288" rx="52" ry="78"/><rect x="473" y="298" width="13" height="24"/>
+        <ellipse cx="960" cy="282" rx="58" ry="82"/><rect x="953" y="294" width="14" height="28"/>
+        <ellipse cx="1300" cy="290" rx="50" ry="74"/><rect x="1293" y="301" width="13" height="22"/>
+        <ellipse cx="1430" cy="285" rx="55" ry="80"/><rect x="1423" y="297" width="14" height="26"/>
+      </g>
+      <!-- Ground -->
+      <path d="M0 300 Q360 270 720 295 Q1080 315 1440 300 L1440 320 L0 320Z" fill="rgba(30,46,30,0.8)"/>
+    </svg>
+  </div>
+
+  <div class="sara-card">
+    <div class="sara-avatar-wrap">
+      <div class="sara-avatar-ring"></div>
+      <div class="sara-avatar-ring2"></div>
+      <div class="sara-avatar">𓆸</div>
+    </div>
+    <p class="sara-eyebrow">Welcome back to nature</p>
+    <h1 class="sara-title">Someone to<br><em>talk to.</em></h1>
+    <p class="sara-subtitle">A safe, quiet place to share<br>whatever's on your mind.</p>
+    <div class="status-row">
+      <div class="status-dot"></div>
+      <span class="status-text">Sara is listening</span>
+    </div>
+    <button class="hello-btn" id="say-hello-btn">
+      <span class="btn-leaf">🌿</span>
+      Say hello to Sara
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHASE 3 — CHAT INTERFACE (Fully Alive)
+══════════════════════════════════════════ -->
+<div id="chat-interface" class="hidden">
+
+  <!-- Living background layers -->
+  <div id="chat-bg"></div>
+  <div id="chat-trees">
+    <svg viewBox="0 0 1440 280" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <g fill="rgba(61,90,62,0.45)">
+        <ellipse cx="90"  cy="220" rx="58" ry="88"/><rect x="84"  y="230" width="12" height="50"/>
+        <ellipse cx="230" cy="200" rx="68" ry="100"/><rect x="224" y="215" width="12" height="65"/>
+        <ellipse cx="380" cy="215" rx="52" ry="80"/><rect x="374" y="228" width="12" height="52"/>
+        <ellipse cx="1060" cy="210" rx="62" ry="92"/><rect x="1054" y="224" width="12" height="56"/>
+        <ellipse cx="1210" cy="205" rx="56" ry="84"/><rect x="1204" y="220" width="12" height="60"/>
+        <ellipse cx="1370" cy="218" rx="50" ry="76"/><rect x="1364" y="230" width="12" height="50"/>
+      </g>
+      <g fill="rgba(26,42,28,0.72)">
+        <ellipse cx="30"  cy="260" rx="50" ry="74"/><rect x="24"  y="268" width="12" height="18"/>
+        <ellipse cx="160" cy="248" rx="62" ry="92"/><rect x="154" y="260" width="12" height="28"/>
+        <ellipse cx="500" cy="255" rx="54" ry="80"/><rect x="494" y="266" width="12" height="22"/>
+        <ellipse cx="940" cy="250" rx="60" ry="86"/><rect x="934" y="263" width="12" height="26"/>
+        <ellipse cx="1290" cy="258" rx="52" ry="78"/><rect x="1284" y="270" width="12" height="18"/>
+        <ellipse cx="1420" cy="252" rx="56" ry="82"/><rect x="1414" y="265" width="12" height="24"/>
+      </g>
+      <path d="M0 268 Q180 248 360 262 Q540 275 720 260 Q900 248 1080 265 Q1260 278 1440 262 L1440 280 L0 280Z" fill="rgba(22,36,22,0.85)"/>
+    </svg>
+  </div>
+  <div id="chat-mist"></div>
+  <canvas id="chat-nature-canvas"></canvas>
+
+  <div class="chat-window" id="chat-window">
+
+    <!-- HEADER — Sara alive -->
+    <div class="chat-header">
+      <div class="chat-avatar-wrap">
+        <div class="avatar-pulse-ring"></div>
+        <div class="avatar-pulse-ring2"></div>
+        <div class="chat-avatar">𓆸</div>
+        <div class="avatar-status"></div>
+      </div>
+      <div class="chat-header-info">
+        <h2>Sara</h2>
+        <div class="sara-status-text">
+          <div class="sara-live-status listening" id="sara-live-status">
+            <span class="sl-dot"></span>
+          </div>
+          <span id="sara-status-label">Listening with love</span>
         </div>
-        
-        <div class="text-section" id="sec-1">
-            <h1>And you just need<br>someone to listen.</h1>
-        </div>
-        
-        <div class="text-section" id="sec-2">
-            <h1>No judgment.<br><em>No pressure.</em></h1>
-        </div>
-        
-        <div class="text-section final-section" id="sec-3">
-            <p class="subtitle">MEET SARA</p>
-            <h1>Someone to<br>talk to.</h1>
-            <p class="description">A quiet place to share what's on your mind.</p>
-            <button id="say-hello-btn" class="chat-btn">Say hello</button>
-        </div>
+      </div>
+      <div class="sara-mood-badge" id="sara-mood-badge">
+        <span class="mood-icon" id="mood-icon">🌿</span>
+        <span id="mood-label">Calm</span>
+      </div>
     </div>
 
-    <div id="chat-interface" class="hidden">
-        <div class="chat-window">
-            <div class="chat-header">
-                <div class="avatar">S</div>
-                <div class="header-info">
-                    <h2>Sara</h2>
-                    <p>Online • Listening with love</p>
-                </div>
-            </div>
-            <div class="chat-messages" id="chat-messages">
-                </div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
-                <button id="send-btn">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </div>
-        </div>
+    <!-- MESSAGES -->
+    <div class="chat-messages" id="chat-messages">
+      <div class="date-divider">Today</div>
     </div>
 
-    <div id="farewell-overlay">
-        <h2>Take all the time you need.<br><em>I'll be right here waiting for you.</em> 🌸</h2>
+    <!-- Sara thinking wave (shown while AI fetches) -->
+    <div id="sara-thinking">
+      <div class="think-bar"></div>
+      <div class="think-bar"></div>
+      <div class="think-bar"></div>
+      <div class="think-bar"></div>
+      <div class="think-bar"></div>
+      <div class="think-bar"></div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Scroll to bottom -->
+    <button id="scroll-down-btn" title="Scroll down">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <!-- Quick mood chips -->
+    <div class="quick-reactions" id="quick-reactions">
+      <div class="reaction-chip" data-msg="I'm feeling anxious today">😟 Anxious</div>
+      <div class="reaction-chip" data-msg="I just need to vent">💬 Need to vent</div>
+      <div class="reaction-chip" data-msg="I'm feeling lonely">🌙 Lonely</div>
+      <div class="reaction-chip" data-msg="I had a really rough day">🍂 Rough day</div>
+      <div class="reaction-chip" data-msg="I'm feeling grateful today">🌻 Grateful</div>
+      <div class="reaction-chip" data-msg="I can't stop overthinking">🌀 Overthinking</div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Share what's on your mind…" autocomplete="off">
+      <button id="send-btn">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAREWELL -->
+<div id="farewell-overlay">
+  <div class="farewell-icon">🌿</div>
+  <h2>Take all the time you need.<br><em>The forest will wait for you.</em></h2>
+  <div class="farewell-leaves">🍃 🌸 🍃</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════ -->
+<script src="script.js"></script>
 </body>
 </html>
