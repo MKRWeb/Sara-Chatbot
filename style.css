@@ -1,124 +1,156 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Base Styles */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
-    /* Animated fluid background */
+body, html {
     background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fdfbfb, #fad0c4);
     background-size: 400% 400%;
-    animation: gradientFlow 12s ease infinite; /* The ongoing background animation */
-    
+    animation: gradientFlow 15s ease infinite;
     font-family: 'Playfair Display', serif;
     color: #333;
     overflow-x: hidden;
-    overscroll-behavior-y: none; 
+    scroll-behavior: smooth;
 }
 
-/* Keyframes for the watercolor flow effect */
 @keyframes gradientFlow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-/* 3D Canvas Fixed to Background */
+/* 3D Canvas */
 #webgl-canvas {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
-    pointer-events: none;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1; pointer-events: none;
 }
 
-/* Sets the height of the page to allow scrolling */
+/* Scroll Intro Sequence */
 .scroll-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 500vh;
+    top: 0; left: 0;
+    width: 100%; height: 500vh;
     z-index: 2;
 }
 
-/* Holds the text fixed in the center */
 .ui-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex; justify-content: center; align-items: center;
     pointer-events: none;
 }
 
-/* Individual Text Sections */
 .text-section {
     position: absolute;
     text-align: center;
     opacity: 0;
-    transform: scale(0.8) translateZ(0);
+    transform: scale(0.1);
     will-change: opacity, transform;
 }
 
-h1 {
-    font-size: 3.5rem;
-    line-height: 1.2;
-    color: #2a1f22;
-    font-weight: 400;
-}
-
-h1 em {
-    color: #d1497b;
-    font-style: italic;
-}
-
-.final-section {
-    pointer-events: auto; 
-}
+h1 { font-size: 3.5rem; line-height: 1.2; color: #2a1f22; font-weight: 400; }
+h1 em { color: #d1497b; font-style: italic; }
 
 .subtitle {
     font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-    color: #d1497b;
-    margin-bottom: 1rem;
-    text-transform: uppercase;
+    font-size: 0.9rem; letter-spacing: 2px;
+    color: #d1497b; margin-bottom: 1rem; text-transform: uppercase;
 }
 
 .description {
     font-family: 'Inter', sans-serif;
-    font-size: 1.1rem;
-    color: #555;
-    margin-top: 1.5rem;
-    margin-bottom: 2.5rem;
+    font-size: 1.1rem; color: #555;
+    margin-top: 1.5rem; margin-bottom: 2.5rem;
 }
 
 .chat-btn {
     font-family: 'Inter', sans-serif;
-    background-color: #1a1a1a;
-    color: #fff;
-    border: none;
-    padding: 1rem 2.5rem;
-    font-size: 1rem;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    pointer-events: auto;
+    background-color: #1a1a1a; color: #fff;
+    border: none; padding: 1rem 2.5rem; font-size: 1rem;
+    border-radius: 50px; cursor: pointer; pointer-events: auto;
+    transition: transform 0.3s ease, background-color 0.3s;
+}
+.chat-btn:hover { background-color: #333; transform: scale(1.05); }
+
+/* --- Chat Interface --- */
+.hidden { display: none !important; }
+
+#chat-interface {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 10;
+    display: flex; justify-content: center; align-items: center;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    animation: fadeIn 1s forwards;
 }
 
-.chat-btn:hover {
-    background-color: #333;
-    transform: translateY(-2px);
+@keyframes fadeIn { to { opacity: 1; } }
+
+.chat-window {
+    width: 90%; max-width: 450px; height: 80vh;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column;
+    overflow: hidden; font-family: 'Inter', sans-serif;
 }
 
-@media (max-width: 768px) {
-    h1 { font-size: 2.2rem; }
-    .scroll-container { height: 600vh; } 
+.chat-header {
+    display: flex; align-items: center;
+    padding: 20px; background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
+
+.avatar {
+    width: 45px; height: 45px;
+    background: linear-gradient(135deg, #ff9a9e, #fecfef);
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    color: #d1497b; font-weight: 600; font-size: 1.2rem;
+    margin-right: 15px;
+}
+
+.header-info h2 { font-size: 1.2rem; margin: 0; color: #222; font-family: 'Playfair Display', serif; }
+.header-info p { font-size: 0.8rem; color: #888; margin: 0; }
+
+.chat-messages {
+    flex: 1; padding: 20px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 15px;
+}
+
+.message { max-width: 80%; padding: 12px 18px; border-radius: 20px; font-size: 0.95rem; line-height: 1.4; animation: popIn 0.3s ease-out; }
+
+@keyframes popIn {
+    0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.message.bot { background: #f0f0f0; color: #333; border-bottom-left-radius: 5px; align-self: flex-start; }
+.message.user { background: #1a1a1a; color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
+
+.chat-input-area {
+    display: flex; padding: 15px;
+    background: #fff; border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+#chat-input {
+    flex: 1; border: none; background: #f5f5f5;
+    padding: 15px 20px; border-radius: 30px;
+    font-size: 1rem; outline: none; font-family: 'Inter', sans-serif;
+}
+
+#send-btn {
+    background: #d1497b; color: white;
+    border: none; width: 50px; height: 50px;
+    border-radius: 50%; margin-left: 10px;
+    cursor: pointer; display: flex; justify-content: center; align-items: center;
+    transition: transform 0.2s;
+}
+#send-btn:hover { transform: scale(1.1); }
+
+@media (max-width: 768px) { h1 { font-size: 2.2rem; } .scroll-container { height: 600vh; } }
+        
