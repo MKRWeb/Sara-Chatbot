@@ -6,12 +6,22 @@
 }
 
 body {
-    background: linear-gradient(135deg, #ffd1dc 0%, #ffb6c1 50%, #ffc0cb 100%);
+    /* Animated fluid background */
+    background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fdfbfb, #fad0c4);
+    background-size: 400% 400%;
+    animation: gradientFlow 12s ease infinite; /* The ongoing background animation */
+    
     font-family: 'Playfair Display', serif;
     color: #333;
     overflow-x: hidden;
-    /* Prevent pull-to-refresh on mobile */
     overscroll-behavior-y: none; 
+}
+
+/* Keyframes for the watercolor flow effect */
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* 3D Canvas Fixed to Background */
@@ -31,7 +41,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 500vh; /* 5 screens tall */
+    height: 500vh;
     z-index: 2;
 }
 
@@ -69,9 +79,8 @@ h1 em {
     font-style: italic;
 }
 
-/* Final Chat Screen Styles */
 .final-section {
-    pointer-events: auto; /* Allows button clicking */
+    pointer-events: auto; 
 }
 
 .subtitle {
@@ -109,9 +118,7 @@ h1 em {
     transform: translateY(-2px);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     h1 { font-size: 2.2rem; }
-    .scroll-container { height: 600vh; } /* Give a bit more scroll room on mobile */
+    .scroll-container { height: 600vh; } 
 }
-
