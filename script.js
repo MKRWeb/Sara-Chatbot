@@ -203,9 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-        sendBtn.addEventListener('click', handleSend);
+            sendBtn.addEventListener('click', handleSend);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSend();
     });
 });
-
+    
