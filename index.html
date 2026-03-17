@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#07090a">
   <title>Sara — A Quiet Place</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,24 +24,10 @@
     </ul>
   </nav>
 
+  <!-- INTRO: WebGL canvas + word headlines -->
   <div id="intro-wrap">
-
     <canvas id="main-canvas"></canvas>
-
-    <svg id="grain-svg" xmlns="http://www.w3.org/2000/svg">
-      <filter id="grain-filter" x="0%" y="0%" width="100%" height="100%"
-        color-interpolation-filters="linearRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.72"
-          numOctaves="4" seed="2" stitchTiles="stitch" result="noise"/>
-        <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
-        <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="blended"/>
-        <feComposite in="blended" in2="SourceGraphic" operator="in"/>
-      </filter>
-      <rect width="100%" height="100%" filter="url(#grain-filter)" opacity="0.045"/>
-    </svg>
-
     <div id="vignette"></div>
-
     <div id="prog-bar"><div id="prog-fill"></div></div>
 
     <div class="hl-stage" id="hl-1">
@@ -53,113 +38,102 @@
         <span class="wm"><b class="w">gets</b></span>
       </div>
       <div class="hl-line">
-        <span class="wm italic"><b class="w">a&nbsp;little</b></span>
-        <span class="wm italic"><b class="w">too</b></span>
-        <span class="wm italic"><b class="w">loud.</b></span>
+        <span class="wm it"><b class="w">a&nbsp;little</b></span>
+        <span class="wm it"><b class="w">too</b></span>
+        <span class="wm it"><b class="w">loud.</b></span>
       </div>
     </div>
 
-    <div class="hl-stage" id="hl-2">
-      <div class="hl-line center">
+    <div class="hl-stage hl-center" id="hl-2">
+      <div class="hl-line jc">
         <span class="wm"><b class="w">And</b></span>
         <span class="wm"><b class="w">you</b></span>
         <span class="wm"><b class="w">just</b></span>
         <span class="wm"><b class="w">need</b></span>
       </div>
-      <div class="hl-line center">
-        <span class="wm italic"><b class="w">someone</b></span>
+      <div class="hl-line jc">
+        <span class="wm it"><b class="w">someone</b></span>
         <span class="wm"><b class="w">to</b></span>
-        <span class="wm italic"><b class="w">listen.</b></span>
+        <span class="wm it"><b class="w">listen.</b></span>
       </div>
     </div>
 
-    <div class="hl-stage" id="hl-3">
+    <div class="hl-stage hl-left" id="hl-3">
       <div class="hl-line">
         <span class="wm"><b class="w">No</b></span>
-        <span class="wm italic"><b class="w">judgment.</b></span>
+        <span class="wm it"><b class="w">judgment.</b></span>
       </div>
       <div class="hl-line">
-        <span class="wm italic"><b class="w">No</b></span>
+        <span class="wm it"><b class="w">No</b></span>
         <span class="wm"><b class="w">pressure.</b></span>
       </div>
     </div>
 
-    <div class="hl-stage center-stage" id="hl-4">
-      <div class="hl-line center">
+    <div class="hl-stage hl-center" id="hl-4">
+      <div class="hl-line jc">
         <span class="wm"><b class="w">Meet</b></span>
-        <span class="wm italic large"><b class="w">Sara.</b></span>
+        <span class="wm it lg"><b class="w">Sara.</b></span>
       </div>
     </div>
+  </div>
 
-  </div><div id="sara-home" class="phase-off">
+  <!-- SARA HOME (hidden by default via CSS) -->
+  <div id="sara-home">
     <canvas id="home-canvas"></canvas>
     <div id="home-orbs">
       <div class="orb o1"></div>
       <div class="orb o2"></div>
       <div class="orb o3"></div>
     </div>
-
     <div id="home-card">
       <div id="av-wrap">
         <svg class="av-ring-svg" viewBox="0 0 130 130">
-          <circle cx="65" cy="65" r="58" fill="none"
-            stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-          <circle id="av-arc" cx="65" cy="65" r="58"
-            fill="none" stroke="rgba(255,255,255,0.5)"
-            stroke-width="1.2" stroke-dasharray="55 310"
-            stroke-linecap="round"/>
+          <circle cx="65" cy="65" r="58" fill="none" stroke="rgba(74,158,255,0.1)" stroke-width="1"/>
+          <circle id="av-arc" cx="65" cy="65" r="58" fill="none" stroke="rgba(74,158,255,0.5)"
+            stroke-width="1.2" stroke-dasharray="55 310" stroke-linecap="round"/>
         </svg>
         <div id="av-face">S</div>
         <div id="av-dot"></div>
       </div>
-
       <p id="home-eyebrow">MEET SARA</p>
       <h1 id="home-h1">Someone to<br><em>talk to.</em></h1>
       <p id="home-sub">A safe, quiet space. No judgment. No pressure.</p>
-
       <div id="home-status">
         <span id="home-pulse"></span>
         <span>Online · Listening with care</span>
       </div>
-
-      <button id="say-hello-btn">
-        Begin conversation
-        <span id="btn-arr">↗</span>
-      </button>
+      <button id="say-hello-btn">Begin conversation <span id="btn-arr">↗</span></button>
       <p id="home-legal">Completely private · No account needed</p>
     </div>
   </div>
 
-  <div id="chat-wrap" class="phase-off">
+  <!-- CHAT (hidden by default via CSS) -->
+  <div id="chat-wrap">
     <canvas id="chat-canvas"></canvas>
     <div id="chat-orb1"></div>
     <div id="chat-orb2"></div>
-
     <div id="chat-trees">
-      <svg viewBox="0 0 1440 240" preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg">
-        <g fill="rgba(20,40,22,0.7)">
-          <ellipse cx="70"   cy="185" rx="52" ry="80"/><rect x="64"  y="196" width="12" height="44"/>
-          <ellipse cx="210"  cy="172" rx="62" ry="94"/><rect x="204" y="187" width="12" height="53"/>
-          <ellipse cx="355"  cy="180" rx="48" ry="74"/><rect x="349" y="193" width="11" height="47"/>
+      <svg viewBox="0 0 1440 240" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <g fill="rgba(10,25,50,0.7)">
+          <ellipse cx="70" cy="185" rx="52" ry="80"/><rect x="64" y="196" width="12" height="44"/>
+          <ellipse cx="210" cy="172" rx="62" ry="94"/><rect x="204" y="187" width="12" height="53"/>
+          <ellipse cx="355" cy="180" rx="48" ry="74"/><rect x="349" y="193" width="11" height="47"/>
           <ellipse cx="1085" cy="175" rx="58" ry="86"/><rect x="1079" y="190" width="12" height="50"/>
           <ellipse cx="1230" cy="170" rx="52" ry="78"/><rect x="1224" y="184" width="12" height="56"/>
           <ellipse cx="1385" cy="182" rx="46" ry="72"/><rect x="1379" y="195" width="11" height="45"/>
         </g>
-        <g fill="rgba(8,18,10,0.85)">
-          <ellipse cx="18"   cy="225" rx="45" ry="68"/><rect x="12"  y="235" width="12" height="15"/>
-          <ellipse cx="148"  cy="215" rx="57" ry="85"/><rect x="142" y="228" width="12" height="22"/>
-          <ellipse cx="480"  cy="220" rx="50" ry="75"/><rect x="474" y="232" width="12" height="18"/>
-          <ellipse cx="960"  cy="218" rx="55" ry="80"/><rect x="954" y="231" width="12" height="20"/>
+        <g fill="rgba(4,8,18,0.88)">
+          <ellipse cx="18" cy="225" rx="45" ry="68"/><rect x="12" y="235" width="12" height="15"/>
+          <ellipse cx="148" cy="215" rx="57" ry="85"/><rect x="142" y="228" width="12" height="22"/>
+          <ellipse cx="480" cy="220" rx="50" ry="75"/><rect x="474" y="232" width="12" height="18"/>
+          <ellipse cx="960" cy="218" rx="55" ry="80"/><rect x="954" y="231" width="12" height="20"/>
           <ellipse cx="1310" cy="222" rx="48" ry="73"/><rect x="1304" y="234" width="12" height="16"/>
           <ellipse cx="1432" cy="219" rx="52" ry="78"/><rect x="1426" y="232" width="12" height="19"/>
         </g>
-        <path d="M0 238 Q360 220 720 236 Q1080 250 1440 236 L1440 240 L0 240Z"
-          fill="rgba(5,12,6,0.92)"/>
+        <path d="M0 238 Q360 220 720 236 Q1080 250 1440 236 L1440 240 L0 240Z" fill="rgba(3,6,14,0.95)"/>
       </svg>
     </div>
     <div id="chat-mist"></div>
-
     <div id="chat-win">
       <header id="chat-hdr">
         <div id="hdr-av-w">
@@ -178,17 +152,14 @@
           <span id="mood-lbl">Calm</span>
         </div>
       </header>
-
       <div id="msgs" role="log" aria-live="polite">
         <div class="day-sep"><span>Today</span></div>
       </div>
-
       <div id="vwave">
         <span class="vb"></span><span class="vb"></span><span class="vb"></span>
         <span class="vb"></span><span class="vb"></span><span class="vb"></span>
         <span class="vb"></span>
       </div>
-
       <div id="chips">
         <button class="chip" data-msg="I'm feeling really anxious today">😶 Anxious</button>
         <button class="chip" data-msg="I just need to vent right now">💬 Vent</button>
@@ -197,22 +168,19 @@
         <button class="chip" data-msg="I can't stop overthinking everything">🌀 Overthinking</button>
         <button class="chip" data-msg="I'm feeling grateful today">🌻 Grateful</button>
       </div>
-
       <div id="input-row">
-        <textarea id="chat-in" placeholder="Say anything…"
-          rows="1" autocomplete="off" spellcheck="false"></textarea>
+        <textarea id="chat-in" placeholder="Say anything…" rows="1" autocomplete="off" spellcheck="false"></textarea>
         <button id="send-btn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="12 5 19 12 12 19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="12 5 19 12 12 19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         </button>
       </div>
     </div>
   </div>
 
-  <div id="farewell" class="phase-off">
+  <!-- FAREWELL (hidden by default via CSS) -->
+  <div id="farewell">
     <div id="fw-inner">
       <div id="fw-glyph">✦</div>
       <h2>Take all the time you need.</h2>
@@ -222,5 +190,4 @@
 
   <script src="script.js"></script>
 </body>
-                                                         </html>
-            
+</html>

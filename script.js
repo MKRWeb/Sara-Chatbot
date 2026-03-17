@@ -149,39 +149,48 @@ const bgMat = new THREE.ShaderMaterial({
     }
 
     vec3 sky(vec2 uv){
-      vec3 col=mix(vec3(.95,.82,.72),mix(vec3(.90,.72,.78),vec3(.72,.62,.82),uv.y),pow(uv.y,.6));
-      float clouds=smoothstep(.42,.58,fbm(uv*3.5+vec2(uTime*.018,0.))*.5+fbm(uv*6.-vec2(uTime*.01,0.))*.25)*.22;
-      col=mix(col,vec3(.98,.95,.97),clouds);
-      col+=vec3(1.,.85,.6)*exp(-pow((uv.y-.18)*5.,2.))*.35;
-      col+=abs(sin(uv.x*40.+uTime*2.2))*.03*smoothstep(.22,.08,uv.y);
+      vec3 top=vec3(0.02,0.04,0.10);
+      vec3 mid=vec3(0.04,0.10,0.22);
+      vec3 hor=vec3(0.08,0.22,0.48);
+      vec3 col=uv.y>.4
+        ?mix(hor,mix(mid,top,(uv.y-.4)/.6),smoothstep(.4,1.,uv.y))
+        :mix(vec3(0.02,0.05,0.12),hor,uv.y/.4);
+      float clouds=fbm(uv*2.8+vec2(uTime*.012,0.))*fbm(uv*5.+vec2(-uTime*.008,0.));
+      col=mix(col,vec3(0.06,0.12,0.28),smoothstep(.3,.6,clouds)*.18*(1.-uv.y));
+      float shimmer=pow(max(0.,sin(uv.x*18.+uTime*2.8)*sin(uTime*1.4)),.8)*.04;
+      shimmer*=smoothstep(.35,.0,abs(uv.y-.28));
+      col+=shimmer*vec3(0.3,0.6,1.0);
+      col+=step(.97,noise(uv*220.+uTime*.02))*uv.y*.7*vec3(0.6,0.8,1.0);
       return col;
     }
     vec3 dive(vec2 uv){
-      vec3 col=mix(vec3(.32,.22,.48),vec3(.58,.52,.72),uv.y);
-      col+=sin(uv.x*28.+uTime*1.8)*sin(uv.y*12.+uTime*.9)*.04;
-      col+=pow(fbm(uv*8.+vec2(uTime*.12,uTime*.09)),.8)*.12*(1.-uv.y)*vec3(.8,.7,1.);
+      vec3 col=mix(vec3(0.01,0.04,0.14),vec3(0.04,0.12,0.30),pow(uv.y,.7));
+      col+=sin(uv.x*22.+uTime*1.5)*sin(uv.y*14.+uTime*.8)*.03*vec3(0.2,0.5,1.0);
+      col+=pow(fbm(uv*9.+vec2(uTime*.1,uTime*.08)),.9)*.12*(1.-uv.y)*vec3(0.3,0.6,1.0);
       return col;
     }
     vec3 deep(vec2 uv){
-      vec3 col=mix(vec3(.08,.02,.16),mix(vec3(.18,.07,.40),vec3(.10,.04,.22),uv.y),pow(uv.y,.5));
+      vec3 col=mix(vec3(0.01,0.02,0.06),vec3(0.02,0.06,0.18),pow(uv.y,.4));
       float rays=0.;
       for(int i=0;i<5;i++){
         float fi=float(i);
-        float cx=.2+fi*.15+sin(uTime*.04+fi*1.2)*.04;
-        float ray=exp(-pow((uv.x-cx)/(uv.y+.01+fi*.06),2.)*80.)*(1.-uv.y);
-        ray*=smoothstep(.7,0.,uv.y)*(.5+.5*sin(uTime*.3+fi));
+        float cx=.18+fi*.16+sin(uTime*.035+fi*1.1)*.04;
+        float ray=exp(-pow((uv.x-cx)/(uv.y+.015+fi*.05),2.)*75.)*(1.-uv.y*.8);
+        ray*=smoothstep(.85,0.,uv.y)*(.4+.6*sin(uTime*.25+fi*1.3));
         rays+=ray;
       }
-      col+=rays*vec3(.55,.35,.9)*.4;
-      float caus=pow(fbm(uv*12.+vec2(uTime*.08,-uTime*.06))*fbm(uv*8.-vec2(uTime*.05,uTime*.07)),1.5)*.18;
-      col+=caus*vec3(.5,.3,.85);
-      col+=step(.94,noise(uv*180.+uTime*.05))*.6*vec3(.8,.8,1.);
+      col+=rays*vec3(0.15,0.45,1.0)*.45;
+      float caus=pow(fbm(uv*14.+vec2(uTime*.07,-uTime*.05))*fbm(uv*9.-vec2(uTime*.04,uTime*.06)),1.6)*.2;
+      col+=caus*vec3(0.2,0.5,1.0);
+      col+=step(.96,noise(uv*180.+uTime*.04))*.5*vec3(0.4,0.7,1.0);
       return col;
     }
     vec3 meet(vec2 uv){
-      vec3 col=mix(vec3(.04,.02,.10),vec3(.08,.04,.18),uv.y);
-      col+=exp(-length(uv-vec2(.5,.5))*2.5)*.4*vec3(.4,.3,.8);
-      col+=step(.94,noise(uv*180.+uTime*.05))*.6*vec3(.8,.8,1.);
+      vec3 col=mix(vec3(0.01,0.02,0.05),vec3(0.02,0.06,0.15),pow(uv.y,.5));
+      col+=exp(-length(uv-vec2(.5,.48))*3.2)*.5*vec3(0.2,0.5,1.0);
+      col+=step(.96,noise(uv*200.+uTime*.03))*.7*vec3(0.6,0.85,1.0);
+      float gx=step(.98,fract(uv.x*18.));float gy=step(.98,fract(uv.y*12.));
+      col+=(gx+gy)*vec3(0.1,0.3,0.7)*.04;
       return col;
     }
 
@@ -198,18 +207,18 @@ const bgMat = new THREE.ShaderMaterial({
 });
 scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), bgMat));
 
-/* ── LIGHTS ── */
-const ambLight  = new THREE.AmbientLight(0xf0e0e8, 0.7);
-const sunLight  = new THREE.DirectionalLight(0xffe8d8, 1.4);
+/* ── LIGHTS — cold blue masculine ── */
+const ambLight  = new THREE.AmbientLight(0x8ab0d8, 0.5);
+const sunLight  = new THREE.DirectionalLight(0xb0d0f8, 1.2);
 sunLight.position.set(3, 8, 5);
-const fillLight = new THREE.DirectionalLight(0xd0c0e8, 0.5);
+const fillLight = new THREE.DirectionalLight(0x304870, 0.4);
 fillLight.position.set(-5, 2, -3);
-const deepLight = new THREE.PointLight(0x8040cc, 0, 14);
+const deepLight = new THREE.PointLight(0x2266cc, 0, 16);
 deepLight.position.set(0, 2, 3);
 scene.add(ambLight, sunLight, fillLight, deepLight);
 
-/* ── STONE MATERIAL ── */
-const stoneMat = () => new THREE.MeshStandardMaterial({ color:0xb0a898, roughness:.85, metalness:.05 });
+/* ── STONE MATERIAL — cold steel grey ── */
+const stoneMat = () => new THREE.MeshStandardMaterial({ color:0x8090a8, roughness:.82, metalness:.18 });
 
 /* ── COLUMN ── */
 const colGrp = new THREE.Group();
@@ -525,7 +534,7 @@ function showHome(){
   home.style.display='flex';
   // tiny delay so display:flex paints before opacity transition
   setTimeout(()=>home.classList.add('visible'), 30);
-  makeParticles('home-canvas',{count:42,speed:.18,opacity:.22,color:'80,140,82',connected:true,dist:125});
+  makeParticles('home-canvas',{count:42,speed:.18,opacity:.18,color:'74,158,255',connected:true,dist:125});
 }
 
 document.getElementById('say-hello-btn')?.addEventListener('click',()=>{
@@ -550,7 +559,7 @@ function openChat(){
   cw.style.display='flex';
   setTimeout(()=>cw.classList.add('visible'), 30);
   if(!chatInited){
-    makeParticles('chat-canvas',{count:36,speed:.2,opacity:.18,color:'80,140,82',connected:true,dist:105});
+    makeParticles('chat-canvas',{count:36,speed:.2,opacity:.14,color:'74,158,255',connected:true,dist:105});
     chatInited=true;
   }
   setWave(true);
@@ -584,7 +593,7 @@ function applyMood(m){
 
 /* Burst */
 function spawnBurst(x,y){
-  const cols=['#4a8a50','#a0d4a4','#c8f0ca','#fff','#b0e0b5'];
+  const cols=['#4a9eff','#2d7dd2','#1a4d8a','#ffffff','#8bc4ff'];
   for(let i=0;i<13;i++){
     const el=document.createElement('div'); el.className='burst';
     const sz=3+Math.random()*5, ang=(i/13)*Math.PI*2, d=32+Math.random()*44;
