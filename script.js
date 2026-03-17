@@ -1,4 +1,3 @@
-// Ensure DOM is fully parsed
 document.addEventListener("DOMContentLoaded", () => {
     
     // --- 1. Three.js Setup ---
@@ -6,8 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    // Pink fog blends particles into the CSS background
-    scene.fog = new THREE.FogExp2(0xffd1dc, 0.0015);
+    scene.fog = new THREE.FogExp2(0xffd1dc, 0.0012);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
@@ -15,32 +13,57 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- 2. Create Floating Particles ---
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 3000;
-    const posArray = new Float32Array(particlesCount * 3);
+    // --- 2. Add Lighting for 3D Objects ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
 
-    for(let i = 0; i < particlesCount * 3; i+=3) {
-        posArray[i] = (Math.random() - 0.5) * 1000;
-        posArray[i+1] = (Math.random() - 0.5) * 1000;
-        posArray[i+2] = (Math.random() * -3000) + 500;
-    }
-
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-    const particlesMaterial = new THREE.PointsMaterial({
-        size: 4,
-        color: 0xffffff,
+    // --- 3. Create Ongoing Animated 3D Objects ---
+    const floatingObjects = [];
+    const geometries = [
+        new THREE.TorusGeometry(12, 3, 16, 100),     // Floating rings
+        new THREE.OctahedronGeometry(15),            // Diamonds
+        new THREE.TetrahedronGeometry(14),           // Pyramids
+        new THREE.IcosahedronGeometry(12)            // Spheres
+    ];
+    
+    // Create a soft, frosted-glass look for the objects
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0xffffff, 
+        roughness: 0.2, 
+        metalness: 0.1,
         transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending
+        opacity: 0.6
     });
 
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
-    camera.position.z = 0;
+    // Generate 70 objects scattered deep into the background
+    for(let i = 0; i < 70; i++) {
+        const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        mesh.position.x = (Math.random() - 0.5) * 500;
+        mesh.position.y = (Math.random() - 0.5) * 500;
+        mesh.position.z = (Math.random() * -2500) + 100; 
+        
+        mesh.rotation.x = Math.random() * Math.PI;
+        mesh.rotation.y = Math.random() * Math.PI;
+        
+        // Give each object its own unique rotation and floating speed
+        mesh.userData = {
+            rotSpeedX: (Math.random() - 0.5) * 0.01,
+            rotSpeedY: (Math.random() - 0.5) * 0.01,
+            floatSpeed: Math.random() * 0.02,
+            floatOffset: Math.random() * Math.PI * 2
+        };
+        
+        scene.add(mesh);
+        floatingObjects.push(mesh);
+    }
 
-    // --- 3. Scroll Tracking Logic ---
+    // --- 4. Scroll Tracking Logic ---
     let scrollPercent = 0;
     let targetCameraZ = 0;
 
@@ -52,10 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     window.addEventListener('scroll', updateScroll, { passive: true });
-    // Run once on load to set initial state
     updateScroll(); 
 
-    // --- 4. HTML UI Updates ---
+    // --- 5. HTML UI Updates ---
     const sections = [
         document.getElementById('sec-0'),
         document.getElementById('sec-1'),
@@ -73,7 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateHTMLUI() {
         sections.forEach((sec, index) => {
             if (!sec) return;
-            
             const timing = sectionTimings[index];
             let opacity = 0;
             let scale = 0.8;
@@ -97,24 +118,28 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             sec.style.opacity = opacity;
-            sec.style.transform = `scale(${scale}) translateZ(0)`; // translateZ forces hardware acceleration
+            sec.style.transform = `scale(${scale}) translateZ(0)`;
             sec.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
         });
     }
 
-    // --- 5. Animation Loop ---
+    // --- 6. Animation Loop (The Ongoing Motion) ---
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
         const elapsedTime = clock.getElapsedTime();
 
-        // Smooth camera interpolation (Lerp)
+        // Smoothly glide camera based on scroll
         camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
 
-        // Slow rotation of particles
-        particlesMesh.rotation.y = elapsedTime * 0.02;
-        particlesMesh.rotation.x = elapsedTime * 0.01;
+        // Animate all 3D objects continuously
+        floatingObjects.forEach((obj) => {
+            obj.rotation.x += obj.userData.rotSpeedX;
+            obj.rotation.y += obj.userData.rotSpeedY;
+            // Gentle up and down bobbing motion
+            obj.position.y += Math.sin(elapsedTime * obj.userData.floatSpeed + obj.userData.floatOffset) * 0.1;
+        });
 
         updateHTMLUI();
         renderer.render(scene, camera);
@@ -122,11 +147,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     animate();
 
-    // --- 6. Resize Handler ---
+    // --- 7. Resize Handler ---
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 });
-                  
+                                
