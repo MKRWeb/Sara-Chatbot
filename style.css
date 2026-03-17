@@ -37,7 +37,7 @@ body, html {
     position: absolute;
     text-align: center;
     opacity: 0;
-    transform: scale(0.1);
+    transform: scale(0.8);
     will-change: opacity, transform;
 }
 
@@ -124,6 +124,31 @@ h1 em { color: #d1497b; font-style: italic; }
 .message.bot { background: #f0f0f0; color: #333; border-bottom-left-radius: 5px; align-self: flex-start; }
 .message.user { background: #1a1a1a; color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
 
+/* --- Animated Typing Dots --- */
+.typing-dots {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 2px;
+}
+
+.typing-dots span {
+    width: 6px; height: 6px;
+    background-color: #888;
+    border-radius: 50%;
+    animation: blink 1.4s infinite both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Input Area */
 .chat-input-area {
     display: flex; padding: 15px;
     background: #fff; border-top: 1px solid rgba(0,0,0,0.05);
