@@ -1,443 +1,598 @@
 /* ═══════════════════════════════════════════════════════════
-   SARA — ULTRA MODERN SCRIPT
-   • Intro: strict sequencer — one sentence at a time, ZERO overlap
-   • Particle system: lightweight canvas, no Three.js needed
-   • Chat: typewriter, mood detection, burst particles, voice wave
+   SARA — Complete Script
+   Replicates the reference video animation exactly:
+   • Per-word clip-mask reveal (translateY from 105% → 0)
+   • Words stagger 65ms apart per word
+   • Each scene transitions with camera-zoom parallax
+   • NO sentence overlapping — guaranteed by DOM structure
 ═══════════════════════════════════════════════════════════ */
-
 'use strict';
 
 /* ─────────────────────────────────────────
-   CUSTOM CURSOR
+   CURSOR
 ───────────────────────────────────────── */
-(function initCursor() {
-  const dot  = document.getElementById('cursor-dot');
-  const ring = document.getElementById('cursor-ring');
-  if (!dot || !ring) return;
-  let mx = -100, my = -100, rx = -100, ry = -100;
-  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-  dot.style.cssText += 'position:fixed;z-index:9999;pointer-events:none;';
-  (function moveCursor() {
-    dot.style.left  = mx + 'px';
-    dot.style.top   = my + 'px';
-    rx += (mx - rx) * 0.1;
-    ry += (my - ry) * 0.1;
-    ring.style.left = rx + 'px';
-    ring.style.top  = ry + 'px';
-    requestAnimationFrame(moveCursor);
-  })();
+const cDot  = document.getElementById('c-dot');
+const cRing = document.getElementById('c-ring');
+let mx = -200, my = -200, rx = -200, ry = -200;
+
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+(function cursorLoop() {
+  cDot.style.left  = mx + 'px';
+  cDot.style.top   = my + 'px';
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  cRing.style.left = rx + 'px';
+  cRing.style.top  = ry + 'px';
+  requestAnimationFrame(cursorLoop);
 })();
 
-/* ─────────────────────────────────────────
-   LIGHTWEIGHT PARTICLE SYSTEM
-   Works on any canvas element
-───────────────────────────────────────── */
-function createParticleField(canvas, opts) {
-  opts = Object.assign({
-    count: 60, speed: 0.3, size: 1.2, opacity: 0.35,
-    color: '90,158,111', connected: true, connectDist: 110
-  }, opts);
+document.querySelectorAll('button,a,.chip,.mood-chip').forEach(el => {
+  el.addEventListener('mouseenter', () => cRing.classList.add('hovered'));
+  el.addEventListener('mouseleave', () => cRing.classList.remove('hovered'));
+});
 
-  const ctx = canvas.getContext('2d');
+/* ─────────────────────────────────────────
+   PARTICLE CANVAS SYSTEM
+   Lightweight 2D canvas — no Three.js needed
+───────────────────────────────────────── */
+function initParticles(canvasId, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  const ctx   = canvas.getContext('2d');
+  const cfg   = {
+    count:       opts.count       ?? 55,
+    speed:       opts.speed       ?? 0.28,
+    maxSize:     opts.maxSize     ?? 1.4,
+    opacity:     opts.opacity     ?? 0.3,
+    color:       opts.color       ?? '80,140,88',
+    connected:   opts.connected   ?? true,
+    connectDist: opts.connectDist ?? 110,
+  };
+
   let W = 0, H = 0;
-  const particles = [];
+  const pts = [];
 
   function resize() {
-    W = canvas.width  = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
+    W = canvas.width  = canvas.offsetWidth  || window.innerWidth;
+    H = canvas.height = canvas.offsetHeight || window.innerHeight;
   }
   resize();
   new ResizeObserver(resize).observe(canvas);
 
-  for (let i = 0; i < opts.count; i++) {
-    particles.push({
-      x:  Math.random() * W,
-      y:  Math.random() * H,
-      vx: (Math.random() - 0.5) * opts.speed,
-      vy: (Math.random() - 0.5) * opts.speed,
-      r:  0.4 + Math.random() * opts.size,
-      o:  0.1 + Math.random() * opts.opacity
+  for (let i = 0; i < cfg.count; i++) {
+    pts.push({
+      x:  Math.random() * (W || 800),
+      y:  Math.random() * (H || 600),
+      vx: (Math.random() - 0.5) * cfg.speed,
+      vy: (Math.random() - 0.5) * cfg.speed,
+      r:  0.4 + Math.random() * cfg.maxSize,
+      o:  0.08 + Math.random() * cfg.opacity,
     });
   }
 
-  let alive = true;
-  (function draw() {
-    if (!alive) return;
+  let running = true;
+  function draw() {
+    if (!running) return;
     requestAnimationFrame(draw);
     ctx.clearRect(0, 0, W, H);
 
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
       p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${opts.color},${p.o})`;
+      ctx.fillStyle = `rgba(${cfg.color},${p.o})`;
       ctx.fill();
 
-      if (opts.connected) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const q = particles[j];
+      if (cfg.connected) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const q  = pts[j];
           const dx = p.x - q.x, dy = p.y - q.y;
-          const d  = Math.sqrt(dx*dx + dy*dy);
-          if (d < opts.connectDist) {
-            const alpha = (1 - d / opts.connectDist) * 0.08;
+          const d  = Math.hypot(dx, dy);
+          if (d < cfg.connectDist) {
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(${opts.color},${alpha})`;
-            ctx.lineWidth = 0.5;
+            ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(${cfg.color},${(1 - d / cfg.connectDist) * 0.07})`;
+            ctx.lineWidth   = 0.5;
             ctx.stroke();
           }
         }
       }
     }
-  })();
-
-  return { stop: () => { alive = false; } };
+  }
+  draw();
+  return { stop: () => { running = false; } };
 }
 
 /* ─────────────────────────────────────────
-   PHASE 1 — CINEMATIC INTRO SEQUENCER
-   ★ SINGLE element, strict state machine
-     → ZERO overlap, ZERO 90s stacking
+   WORD REVEAL ENGINE
+   Exact replication of the reference video:
+   • Words clip-masked (overflow:hidden on .word-mask)
+   • translateY(105%) → translateY(0) = slide up from below mask
+   • 65ms stagger between each word
+   • Reverse: translateY(0) → translateY(-108%) = exit upward
+   • ZERO overlap possible — each word is self-contained
 ───────────────────────────────────────── */
-(function initIntro() {
+const WORD_STAGGER  = 65;   // ms between each word
+const WORD_IN_DUR   = 750;  // ms for one word to slide in
+const WORD_OUT_DUR  = 480;  // ms for one word to exit
 
-  /* ── Sentences ── */
-  const SENTENCES = [
-    'When the world gets<br><em>a little too loud.</em>',
-    'And you just need<br>someone to listen.',
-    'No judgment.<br><em>No pressure.</em>',
-    'A quiet place,<br>made just for you.',
-    'Meet <em>Sara.</em>',
-  ];
+/**
+ * Reveals all .word elements inside a container, staggered.
+ * @param {string|Element} container - selector or element
+ * @param {Function}       onDone    - called after last word finishes entering
+ */
+function revealWords(container, onDone) {
+  const el    = typeof container === 'string'
+    ? document.querySelector(container) : container;
+  if (!el) { if (onDone) onDone(); return; }
 
-  /* ── Timing per sentence (ms) ── */
-  const HOLD    = 2200;   // time sentence is fully visible
-  const IN_DUR  = 700;    // CSS transition in
-  const OUT_DUR = 450;    // CSS transition out
-  const GAP     = 120;    // silence between sentences
-  const TOTAL_INTRO_MS = SENTENCES.length * (IN_DUR + HOLD + OUT_DUR + GAP) + 600;
+  const words = [...el.querySelectorAll('.word')];
+  if (!words.length) { if (onDone) onDone(); return; }
 
-  const screen   = document.getElementById('intro-screen');
-  const textEl   = document.getElementById('sentence-text');
-  const barFill  = document.getElementById('intro-bar-fill');
-  const canvas   = document.getElementById('intro-canvas');
-
-  if (!screen || !textEl) return;
-
-  /* Start particle field */
-  createParticleField(canvas, {
-    count:50, speed:0.25, size:1, opacity:0.3,
-    color:'90,158,111', connected:true, connectDist:100
+  // Reset all first
+  words.forEach(w => {
+    w.classList.remove('w-in', 'w-out');
+    w.style.transform = 'translateY(105%)';
+    w.style.opacity   = '0';
+    w.style.transition = 'none';
   });
 
-  /* ── State machine ── */
-  let currentIndex = -1;
-  let sequenceDone = false;
-
-  function showSentence(index) {
-    if (sequenceDone) return;
-    currentIndex = index;
-
-    /* Update text BEFORE any class — element is currently opacity:0 */
-    textEl.innerHTML = SENTENCES[index];
-    textEl.classList.remove('visible', 'exiting');
-
-    /* Force reflow so transition fires */
-    void textEl.offsetWidth;
-
-    /* Fade IN */
-    textEl.classList.add('visible');
-
-    /* Update progress bar */
-    const pct = ((index + 1) / SENTENCES.length) * 100;
-    barFill.style.width = pct + '%';
-
-    /* Schedule EXIT */
+  // Stagger each word in
+  words.forEach((w, i) => {
     setTimeout(() => {
-      if (sequenceDone) return;
-      /* Fade OUT */
-      textEl.classList.remove('visible');
-      textEl.classList.add('exiting');
+      w.style.transition = `transform ${WORD_IN_DUR}ms cubic-bezier(0.22,1,0.36,1),
+                            opacity 100ms ease`;
+      w.style.transform = 'translateY(0)';
+      w.style.opacity   = '1';
+    }, i * WORD_STAGGER);
+  });
 
-      /* After exit finishes, either show next or end */
+  // Fire callback after last word finishes entering
+  const totalIn = (words.length - 1) * WORD_STAGGER + WORD_IN_DUR;
+  if (onDone) setTimeout(onDone, totalIn);
+}
+
+/**
+ * Exits all .word elements inside a container upward, staggered.
+ * @param {string|Element} container
+ * @param {Function}       onDone
+ */
+function exitWords(container, onDone) {
+  const el    = typeof container === 'string'
+    ? document.querySelector(container) : container;
+  if (!el) { if (onDone) onDone(); return; }
+
+  const words = [...el.querySelectorAll('.word')];
+  if (!words.length) { if (onDone) onDone(); return; }
+
+  words.forEach((w, i) => {
+    setTimeout(() => {
+      w.style.transition = `transform ${WORD_OUT_DUR}ms cubic-bezier(0.55,0,1,0.45),
+                            opacity ${WORD_OUT_DUR}ms ease`;
+      w.style.transform = 'translateY(-108%)';
+      w.style.opacity   = '0';
+    }, i * 45); // slightly tighter stagger on exit
+  });
+
+  const totalOut = (words.length - 1) * 45 + WORD_OUT_DUR;
+  if (onDone) setTimeout(onDone, totalOut);
+}
+
+/* ─────────────────────────────────────────
+   SCENE MANAGER
+   Strict state machine — one scene active at a time
+   No two scenes can be visible simultaneously
+───────────────────────────────────────── */
+const scenes = {
+  sky:  document.getElementById('scene-sky'),
+  dive: document.getElementById('scene-dive'),
+  deep: document.getElementById('scene-deep'),
+  meet: document.getElementById('scene-meet'),
+};
+
+const headlines = {
+  sky:  document.getElementById('headline-sky'),
+  dive: document.getElementById('headline-dive'),
+  deep: document.getElementById('headline-deep'),
+  meet: document.getElementById('headline-meet'),
+};
+
+let activeScene = null;
+
+/**
+ * Cross-fade from one scene to the next.
+ * While scene fades out, words exit; when complete scene fades in, words enter.
+ */
+function transitionScene(fromKey, toKey, onToComplete) {
+  const fromScene    = scenes[fromKey];
+  const toScene      = scenes[toKey];
+  const fromHeadline = headlines[fromKey];
+  const toHeadline   = headlines[toKey];
+
+  if (!toScene) { if (onToComplete) onToComplete(); return; }
+
+  // 1. Exit words from current scene
+  if (fromHeadline) {
+    exitWords(fromHeadline, () => {
+      // 2. Fade out old scene
+      if (fromScene) {
+        fromScene.style.transition = 'opacity 0.9s ease';
+        fromScene.style.opacity    = '0';
+        fromScene.style.pointerEvents = 'none';
+        setTimeout(() => {
+          fromScene.classList.remove('scene-active');
+        }, 900);
+      }
+
+      // 3. Fade in new scene slightly overlapping for smoothness
       setTimeout(() => {
-        textEl.classList.remove('exiting');
+        toScene.classList.add('scene-active');
+        toScene.style.transition = 'opacity 1.1s ease';
 
-        if (index + 1 < SENTENCES.length) {
-          setTimeout(() => showSentence(index + 1), GAP);
-        } else {
-          /* All sentences done → transition to home */
-          sequenceDone = true;
-          setTimeout(transitionToHome, 400);
-        }
-      }, OUT_DUR);
-
-    }, HOLD);
-  }
-
-  /* Kick off */
-  setTimeout(() => showSentence(0), 600);
-
-  /* ── Transition to Sara Home ── */
-  function transitionToHome() {
-    /* Fade out intro screen */
-    screen.style.transition = 'opacity 0.9s ease';
-    screen.style.opacity = '0';
-    screen.style.pointerEvents = 'none';
-
+        // 4. Reveal words in new scene
+        setTimeout(() => {
+          revealWords(toHeadline, () => {
+            activeScene = toKey;
+            if (onToComplete) onToComplete();
+          });
+        }, 500);
+      }, 200);
+    });
+  } else {
+    // No headline, just crossfade
+    if (fromScene) {
+      fromScene.style.transition = 'opacity 0.9s ease';
+      fromScene.style.opacity    = '0';
+      setTimeout(() => fromScene.classList.remove('scene-active'), 900);
+    }
     setTimeout(() => {
-      screen.style.display = 'none';
-      showSaraHome();
-    }, 900);
+      toScene.classList.add('scene-active');
+      revealWords(toHeadline, () => {
+        activeScene = toKey;
+        if (onToComplete) onToComplete();
+      });
+    }, 300);
   }
-
-})();
+}
 
 /* ─────────────────────────────────────────
-   PHASE 2 — SARA HOME
+   PROGRESS BAR
 ───────────────────────────────────────── */
-function showSaraHome() {
-  const home = document.getElementById('sara-home');
-  if (!home) return;
-  home.classList.remove('hidden');
-  home.style.opacity = '0';
+const progressFill = document.getElementById('intro-bar-fill');
+function setProgress(pct) {
+  if (progressFill) progressFill.style.width = pct + '%';
+}
 
-  /* Start home particles */
-  const hCanvas = document.getElementById('home-canvas');
-  if (hCanvas) {
-    createParticleField(hCanvas, {
-      count:40, speed:0.18, size:1.1, opacity:0.25,
-      color:'90,158,111', connected:true, connectDist:120
+/* ─────────────────────────────────────────
+   SCENE TIMING PLAN
+   Matches the reference video's rhythm:
+   • Scene 1 (sky):  hold 3.5s → camera drift already happening
+   • Scene 2 (dive): hold 2.8s
+   • Scene 3 (deep): hold 3.2s
+   • Scene 4 (meet): hold 2.5s → fade to home
+───────────────────────────────────────── */
+const SCENE_HOLDS = {
+  sky:  3500,
+  dive: 2800,
+  deep: 3200,
+  meet: 2500,
+};
+
+/* ─────────────────────────────────────────
+   FLOATING OBJECT PARALLAX
+   Very subtle — objects drift as if camera moves forward
+───────────────────────────────────────── */
+function initParallaxObjects() {
+  const floatWorld = document.getElementById('float-world');
+  if (!floatWorld) return;
+
+  let progress = 0; // 0 → 1 as intro plays
+  let lastTime = performance.now();
+
+  (function driftLoop(now) {
+    if (progress >= 1) return;
+    const dt = (now - lastTime) / 1000;
+    lastTime = now;
+    progress = Math.min(1, progress + dt * 0.032); // ~31s to complete
+
+    // Gentle forward drift — scale up slightly (camera moving in)
+    const scale  = 1 + progress * 0.12;
+    // Slow upward drift as "camera" ascends then dives
+    const drift  = progress < 0.5
+      ? progress * -8         // rise
+      : (progress - 0.5) * 40; // fall toward water
+
+    floatWorld.style.transform  = `scale(${scale}) translateY(${drift}px)`;
+    floatWorld.style.transition = 'none';
+
+    requestAnimationFrame(driftLoop);
+  })(performance.now());
+}
+
+/* ─────────────────────────────────────────
+   MAIN INTRO SEQUENCE
+───────────────────────────────────────── */
+function startIntro() {
+  const nav = document.getElementById('main-nav');
+
+  // Init sky particles
+  initParticles('sky-canvas', {
+    count: 45, speed: 0.22, opacity: 0.22, color: '200,160,180', connected: false
+  });
+  initParticles('dive-canvas', {
+    count: 40, speed: 0.3, opacity: 0.2, color: '180,160,220', connected: false
+  });
+  initParticles('deep-canvas', {
+    count: 50, speed: 0.35, opacity: 0.25, color: '120,80,200', connected: true, connectDist: 90
+  });
+  initParticles('meet-canvas', {
+    count: 40, speed: 0.25, opacity: 0.2, color: '180,140,255', connected: false
+  });
+
+  // Start floating objects
+  initParallaxObjects();
+
+  // Show nav after brief delay
+  setTimeout(() => {
+    if (nav) nav.classList.add('nav-show');
+  }, 800);
+
+  /* ── SCENE 1: SKY ── */
+  const sceneSky = scenes.sky;
+  sceneSky.classList.add('scene-active');
+  sceneSky.style.opacity = '1';
+
+  setProgress(0);
+
+  // Reveal sky words after 400ms
+  setTimeout(() => {
+    revealWords(headlines.sky, () => {
+      setProgress(25);
+      // Hold, then transition to scene 2
+      setTimeout(() => {
+        setProgress(35);
+        transitionScene('sky', 'dive', () => {
+          setProgress(50);
+          // Hold scene 2
+          setTimeout(() => {
+            setProgress(60);
+            transitionScene('dive', 'deep', () => {
+              setProgress(75);
+              // Hold scene 3
+              setTimeout(() => {
+                setProgress(88);
+                transitionScene('deep', 'meet', () => {
+                  setProgress(100);
+                  // Hold scene 4, then go to home
+                  setTimeout(() => {
+                    exitIntroToHome();
+                  }, SCENE_HOLDS.meet);
+                });
+              }, SCENE_HOLDS.deep);
+            });
+          }, SCENE_HOLDS.dive);
+        });
+      }, SCENE_HOLDS.sky);
     });
-  }
+  }, 400);
+}
 
-  requestAnimationFrame(() => {
-    home.style.transition = 'opacity 1s ease';
-    home.style.opacity = '1';
+/* ─────────────────────────────────────────
+   INTRO → HOME TRANSITION
+   Fade all scenes, reveal Sara home
+───────────────────────────────────────── */
+function exitIntroToHome() {
+  // Exit words from meet scene
+  exitWords(headlines.meet, () => {
+    const meetScene = scenes.meet;
+    if (meetScene) {
+      meetScene.style.transition = 'opacity 1.2s ease';
+      meetScene.style.opacity    = '0';
+    }
+
+    // Hide nav
+    const nav = document.getElementById('main-nav');
+    if (nav) { nav.style.transition = 'opacity 0.8s'; nav.style.opacity = '0'; }
+
+    // Fade in Sara home
+    setTimeout(() => {
+      Object.values(scenes).forEach(s => {
+        if (s) { s.style.opacity = '0'; s.classList.remove('scene-active'); }
+      });
+
+      const home = document.getElementById('sara-home');
+      if (home) {
+        home.classList.remove('phase-off');
+        home.classList.add('phase-in');
+        // Init home particles
+        initParticles('home-canvas', {
+          count: 42, speed: 0.2, opacity: 0.22, color: '80,140,88',
+          connected: true, connectDist: 120
+        });
+      }
+    }, 600);
   });
 }
 
 /* ─────────────────────────────────────────
-   SARA HOME → CHAT BUTTON
+   SARA HOME → CHAT
 ───────────────────────────────────────── */
 const sayHelloBtn = document.getElementById('say-hello-btn');
 if (sayHelloBtn) {
   sayHelloBtn.addEventListener('click', () => {
     const home = document.getElementById('sara-home');
     if (home) {
-      home.style.transition = 'opacity 0.6s ease';
-      home.style.opacity    = '0';
+      home.style.transition   = 'opacity 0.6s ease';
+      home.style.opacity      = '0';
       home.style.pointerEvents = 'none';
     }
     setTimeout(() => {
-      if (home) home.classList.add('hidden');
-      history.pushState({ page:'chat' }, 'Chat', '#chat');
-      showChat();
+      if (home) home.classList.add('phase-off');
+      history.pushState({ page: 'chat' }, '', '#chat');
+      openChat();
     }, 600);
   });
 }
 
 /* ─────────────────────────────────────────
-   PHASE 3 — CHAT
+   CHAT
 ───────────────────────────────────────── */
-let isChatting   = false;
-let chatStarted  = false;
-let chipsVisible = true;
+let isChatting  = false;
+let chipsShown  = true;
+let chatInited  = false;
 
-function showChat() {
+function openChat() {
   isChatting = true;
   const ci = document.getElementById('chat-interface');
   if (!ci) return;
 
-  ci.classList.remove('hidden');
-  ci.style.opacity = '0';
-  requestAnimationFrame(() => {
-    ci.style.transition = 'opacity 0.7s ease';
-    ci.style.opacity    = '1';
-  });
+  ci.classList.remove('phase-off');
+  ci.classList.add('phase-in');
 
-  /* Start chat particles */
-  const cCanvas = document.getElementById('chat-canvas');
-  if (cCanvas && !chatStarted) {
-    createParticleField(cCanvas, {
-      count:35, speed:0.2, size:1, opacity:0.2,
-      color:'90,158,111', connected:true, connectDist:100
+  if (!chatInited) {
+    initParticles('chat-canvas', {
+      count: 38, speed: 0.22, opacity: 0.18, color: '80,140,88',
+      connected: true, connectDist: 110
     });
-    chatStarted = true;
+    chatInited = true;
   }
 
-  /* Sara intro message */
-  setSaraThinking(true);
+  // Sara's opening — wave first, then typewrite
+  setWave(true);
   setTimeout(() => {
-    setSaraThinking(false);
-    appendBotTyped("Hi there 🌿 I'm Sara. This is your quiet space — no rush, no judgment. What's been on your mind lately?");
-  }, 1400);
+    setWave(false);
+    typeBotMessage("Hi there 🌿 I'm Sara. This is your quiet space — no rush, no judgment. What's been on your mind lately?");
+  }, 1500);
 }
 
-/* ── Status helpers ── */
-const statusLabel = document.getElementById('ch-status-label');
-const thinkingWave = document.getElementById('thinking-wave');
+/* ── Status wave ── */
+const waveEl        = document.getElementById('wave-think');
+const statusTextEl  = document.getElementById('ch-status-text');
 
-function setSaraListening() {
-  if (statusLabel) statusLabel.textContent = 'Listening';
-  setSaraThinking(false);
-}
-function setSaraThinking(on) {
-  if (!thinkingWave) return;
+function setWave(on) {
+  if (!waveEl) return;
   if (on) {
-    thinkingWave.classList.remove('hidden-wave');
-    thinkingWave.classList.add('visible-wave');
-    if (statusLabel) statusLabel.textContent = 'Thinking…';
-    const m = document.getElementById('messages-area');
-    if (m) setTimeout(() => { m.scrollTop = m.scrollHeight; }, 50);
+    waveEl.classList.add('wave-on');
+    if (statusTextEl) statusTextEl.textContent = 'Thinking…';
   } else {
-    thinkingWave.classList.add('hidden-wave');
-    thinkingWave.classList.remove('visible-wave');
+    waveEl.classList.remove('wave-on');
+    if (statusTextEl) statusTextEl.textContent = 'Listening';
   }
 }
-function setSaraWriting() {
-  if (statusLabel) statusLabel.textContent = 'Writing…';
+function setWriting() {
+  if (statusTextEl) statusTextEl.textContent = 'Writing…';
 }
 
 /* ── Mood detection ── */
 const MOODS = [
-  { words:['anxi','panic','scare','fear','worr'],       icon:'🌧', label:'Tender',    hue:'210,140,100' },
-  { words:['sad','cry','depress','lonely','alone','empty'], icon:'🌙', label:'Gentle',    hue:'160,170,210' },
-  { words:['ang','mad','furi','frustrat','annoy'],      icon:'🔥', label:'Heated',    hue:'210,120,80'  },
-  { words:['happ','joy','excit','grat','thank','amaz'], icon:'🌻', label:'Warm',      hue:'200,170,80'  },
-  { words:['tired','exhaust','sleep','drain'],          icon:'🍃', label:'Resting',   hue:'100,160,120' },
-  { words:['overthink','stress','overwhelm'],           icon:'🌀', label:'Swirling',  hue:'140,120,200' },
-  { words:['love','miss','heart'],                      icon:'🌸', label:'Tender',    hue:'210,150,160' },
+  { words:['anxi','panic','scar','fear','worri'],      icon:'🌧',label:'Tender'   },
+  { words:['sad','cry','depress','lone','empty'],       icon:'🌙',label:'Gentle'   },
+  { words:['ang','mad','furi','frustrat','annoy'],      icon:'🔥',label:'Heated'   },
+  { words:['happ','joy','excit','grat','thank','amaz'],icon:'🌻',label:'Warm'     },
+  { words:['tired','exhaust','sleep','drain'],          icon:'🍃',label:'Resting'  },
+  { words:['overthink','stress','overwhelm'],           icon:'🌀',label:'Swirling' },
 ];
-
-function detectMood(text) {
-  const t = text.toLowerCase();
+function detectMood(t) {
+  const s = t.toLowerCase();
   for (const m of MOODS) {
-    if (m.words.some(w => t.includes(w))) return m;
+    if (m.words.some(w => s.includes(w))) return m;
   }
-  return { icon:'🌿', label:'Calm', hue:'90,158,111' };
+  return { icon:'🌿', label:'Calm' };
+}
+function applyMood(m) {
+  const i = document.getElementById('mood-icon');
+  const w = document.getElementById('mood-word');
+  if (i) { i.style.transform='scale(1.6)'; i.textContent=m.icon; setTimeout(()=>i.style.transform='',400); }
+  if (w) w.textContent = m.label;
 }
 
-function applyMood(mood) {
-  const icon = document.getElementById('mood-icon');
-  const word = document.getElementById('mood-word');
-  if (icon) { icon.style.transform = 'scale(1.5)'; icon.textContent = mood.icon; setTimeout(() => icon.style.transform = '', 400); }
-  if (word) word.textContent = mood.label;
-}
-
-/* ── Particle burst ── */
+/* ── Particle burst on send ── */
 function spawnBurst(x, y) {
-  const colors = ['#5a9e6f','#a8d4b0','#c8f0d0','#ffffff','#b8e8c0'];
-  for (let i = 0; i < 12; i++) {
-    const el = document.createElement('div');
-    el.className = 'p-burst';
-    const size  = 3 + Math.random() * 5;
-    const angle = (i / 12) * Math.PI * 2;
-    const dist  = 35 + Math.random() * 45;
-    el.style.cssText = `
-      left:${x}px; top:${y}px;
-      width:${size}px; height:${size}px;
-      background:${colors[i % colors.length]};
-      --tx:${Math.cos(angle)*dist}px;
-      --ty:${Math.sin(angle)*dist}px;
-    `;
+  const cols = ['#5a8a5e','#a8d4a8','#c8f0c8','#fff','#b0e0b8'];
+  for (let i = 0; i < 13; i++) {
+    const el    = document.createElement('div');
+    el.className = 'burst-p';
+    const sz    = 3 + Math.random() * 5;
+    const ang   = (i / 13) * Math.PI * 2;
+    const dist  = 34 + Math.random() * 44;
+    el.style.cssText = `left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;`
+      + `background:${cols[i % cols.length]};`
+      + `--tx:${Math.cos(ang)*dist}px;--ty:${Math.sin(ang)*dist}px;`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 700);
   }
 }
 
-/* ── Timestamp ── */
-function nowTime() {
+/* ── Time helper ── */
+function nowHHMM() {
   const d = new Date();
-  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
-/* ── Append message (instant) ── */
-function appendMessage(who, text) {
-  const area = document.getElementById('messages-area');
-  if (!area) return;
-
-  const wrap = document.createElement('div');
-  wrap.className = `msg ${who}`;
-
-  const content = document.createElement('span');
-  content.textContent = text;
-  wrap.appendChild(content);
-
-  const ts = document.createElement('span');
-  ts.className = 'msg-ts';
-  ts.textContent = nowTime();
-  wrap.appendChild(ts);
-
-  /* Reaction shelf */
-  const reacts = document.createElement('div');
-  reacts.className = 'msg-reactions';
-  ['🌿','💚','🤍','✨'].forEach(e => {
-    const b = document.createElement('button');
-    b.className = 'react-btn'; b.textContent = e;
-    b.onclick = () => { b.style.transform = 'scale(1.6)'; setTimeout(() => b.style.transform = '', 300); };
-    reacts.appendChild(b);
-  });
-  wrap.appendChild(reacts);
-
+/* ── Append user message ── */
+function appendUserMsg(text) {
+  const area  = document.getElementById('messages');
+  const wrap  = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = `<span>${escHtml(text)}</span>
+    <span class="msg-ts">${nowHHMM()}</span>
+    <div class="msg-reacts">
+      ${['🌿','💚','🤍','✨'].map(e=>`<button class="react">${e}</button>`).join('')}
+    </div>`;
   area.appendChild(wrap);
-  smartScroll(area);
+  smoothScroll(area);
 }
 
-/* ── Typewriter append (bot only) ── */
-function appendBotTyped(fullText) {
-  const area = document.getElementById('messages-area');
-  if (!area) return;
+/* ── Typewriter bot message ── */
+function typeBotMessage(fullText) {
+  const area  = document.getElementById('messages');
+  setWriting();
 
-  setSaraWriting();
-
-  const wrap = document.createElement('div');
+  const wrap  = document.createElement('div');
   wrap.className = 'msg bot';
-
-  const content = document.createElement('span');
-  wrap.appendChild(content);
-
-  const ts = document.createElement('span');
+  const span  = document.createElement('span');
+  const ts    = document.createElement('span');
   ts.className = 'msg-ts';
-  wrap.appendChild(ts);
-
   const reacts = document.createElement('div');
-  reacts.className = 'msg-reactions';
-  ['🌿','💚','🤍','✨'].forEach(e => {
-    const b = document.createElement('button');
-    b.className = 'react-btn'; b.textContent = e;
-    b.onclick = () => { b.style.transform = 'scale(1.6)'; setTimeout(() => b.style.transform = '', 300); };
-    reacts.appendChild(b);
-  });
+  reacts.className = 'msg-reacts';
+  reacts.innerHTML = ['🌿','💚','🤍','✨']
+    .map(e => `<button class="react">${e}</button>`).join('');
+
+  wrap.appendChild(span);
+  wrap.appendChild(ts);
   wrap.appendChild(reacts);
-
   area.appendChild(wrap);
-  smartScroll(area);
+  smoothScroll(area);
 
-  /* Typewriter loop */
+  // Type character by character
   let i = 0;
-  const speed = Math.max(16, Math.min(32, 2200 / fullText.length));
-  function type() {
+  const speed = Math.max(16, Math.min(34, 2200 / fullText.length));
+  function tick() {
     if (i < fullText.length) {
-      content.textContent += fullText[i++];
-      smartScroll(area);
-      setTimeout(type, speed);
+      span.textContent += fullText[i++];
+      smoothScroll(area);
+      setTimeout(tick, speed);
     } else {
-      ts.textContent = nowTime();
-      setSaraListening();
+      ts.textContent = nowHHMM();
+      setWave(false);
+      if (statusTextEl) statusTextEl.textContent = 'Listening';
     }
   }
-  type();
+  tick();
 }
 
-function smartScroll(area) {
-  const nearBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 100;
-  if (nearBottom) area.scrollTop = area.scrollHeight;
+function smoothScroll(el) {
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /* ── Send handler ── */
@@ -449,104 +604,141 @@ async function handleSend() {
   const text = chatInput.value.trim();
   if (!text) return;
 
-  /* Detect mood */
-  const mood = detectMood(text);
-  applyMood(mood);
+  // Mood
+  applyMood(detectMood(text));
 
-  /* User message */
-  appendMessage('user', text);
-  chatInput.value = '';
-  chatInput.style.height = 'auto';
+  // User bubble
+  appendUserMsg(text);
+  chatInput.value         = '';
+  chatInput.style.height  = 'auto';
+  sendBtn.disabled        = true;
 
-  /* Enable/disable send */
-  sendBtn.disabled = true;
-
-  /* Collapse mood chips after first real send */
-  if (chipsVisible) {
-    const chips = document.getElementById('mood-chips');
-    if (chips) chips.classList.add('collapsed');
-    chipsVisible = false;
+  // Collapse chips
+  if (chipsShown) {
+    const chips = document.getElementById('chips-row');
+    if (chips) chips.classList.add('chips-gone');
+    chipsShown = false;
   }
 
-  /* Burst + button animation */
-  const btnRect = sendBtn.getBoundingClientRect();
-  spawnBurst(btnRect.left + btnRect.width/2, btnRect.top + btnRect.height/2);
+  // Burst + button animation
+  const r = sendBtn.getBoundingClientRect();
+  spawnBurst(r.left + r.width / 2, r.top + r.height / 2);
   sendBtn.classList.add('fired');
   setTimeout(() => sendBtn.classList.remove('fired'), 450);
 
-  /* Show Sara thinking */
-  setSaraThinking(true);
+  // Show wave
+  setWave(true);
 
   try {
-    const sys = "You are Sara. You are a romantic, sweet, deeply empathetic, and completely non-judgmental listener. Keep your responses brief (2-3 sentences max), conversational, and comforting. Speak like a gentle human friend, not an AI. Never use bullet points or lists.";
-    const url = `https://text.pollinations.ai/prompt/${encodeURIComponent(sys + ' The user says: "' + text + '"')}`;
-    const res = await fetch(url);
-    const ai  = await res.text();
-
-    setSaraThinking(false);
-    setTimeout(() => appendBotTyped(ai.trim()), 280);
-
+    const sys = [
+      'You are Sara.',
+      'You are a deeply empathetic, warm, non-judgmental listener.',
+      'Respond in 2-3 sentences max.',
+      'Be conversational, gentle, and human.',
+      'Never use bullet points or lists.',
+      'Never say you are an AI.',
+    ].join(' ');
+    const res = await fetch(
+      `https://text.pollinations.ai/prompt/${encodeURIComponent(sys + ' User: "' + text + '"')}`
+    );
+    const ai = await res.text();
+    setWave(false);
+    setTimeout(() => typeBotMessage(ai.trim()), 280);
   } catch {
-    setSaraThinking(false);
-    appendBotTyped("I'm still right here 🌿 The connection flickered but my presence didn't.");
+    setWave(false);
+    typeBotMessage("I'm right here 🌿 The connection flickered but I haven't gone anywhere.");
   }
 }
 
-/* ── Send wiring ── */
 if (sendBtn) sendBtn.addEventListener('click', handleSend);
 if (chatInput) {
   chatInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   });
-
-  /* Auto-grow textarea */
   chatInput.addEventListener('input', () => {
     chatInput.style.height = 'auto';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-    sendBtn.disabled = chatInput.value.trim() === '';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 110) + 'px';
+    sendBtn.disabled       = chatInput.value.trim() === '';
   });
 }
 
-/* ── Mood chips ── */
-document.querySelectorAll('.mood-chip').forEach(chip => {
+/* Chips */
+document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
     if (!chatInput) return;
-    chatInput.value = chip.dataset.msg;
-    sendBtn.disabled = false;
-    chatInput.dispatchEvent(new Event('input'));
+    chatInput.value    = chip.dataset.msg;
+    sendBtn.disabled   = false;
     handleSend();
   });
 });
 
-/* ── Back button → farewell ── */
+/* ─────────────────────────────────────────
+   BACK BUTTON → FAREWELL
+───────────────────────────────────────── */
 window.addEventListener('popstate', () => {
-  if (isChatting) triggerFarewell();
+  if (isChatting) showFarewell();
 });
 
-function triggerFarewell() {
+function showFarewell() {
   isChatting = false;
   const ci = document.getElementById('chat-interface');
-  const fw = document.getElementById('farewell-overlay');
+  const fw = document.getElementById('farewell');
 
   if (ci) { ci.style.transition = 'opacity 0.5s'; ci.style.opacity = '0'; }
-  if (fw) fw.classList.add('show');
+
+  if (fw) {
+    fw.classList.remove('phase-off');
+    fw.classList.add('phase-in');
+    fw.style.display = 'flex';
+  }
 
   setTimeout(() => {
-    if (ci) ci.classList.add('hidden');
-    if (fw) { fw.classList.remove('show'); }
-
-    setTimeout(() => {
-      /* Return to Sara home */
-      const home = document.getElementById('sara-home');
-      if (home) {
-        home.classList.remove('hidden');
-        home.style.opacity = '0';
-        requestAnimationFrame(() => {
-          home.style.transition = 'opacity 0.8s ease';
-          home.style.opacity    = '1';
-        });
-      }
-      setSaraListening();
-    }, 1000);
-  }, 3000);
+    if (ci) { ci.style.opacity=''; ci.classList.add('phase-off'); }
+    if (fw) {
+      fw.style.transition = 'opacity 1s';
+      fw.style.opacity    = '0';
+      setTimeout(() => {
+        fw.classList.add('phase-off'); fw.style.opacity='';
+        // Return to home
+        const home = document.getElementById('sara-home');
+        if (home) {
+          home.classList.remove('phase-off');
+          home.style.opacity = '0';
+          home.classList.add('phase-in');
+          requestAnimationFrame(() => {
+            home.style.transition = 'opacity 0.8s ease';
+            home.style.opacity    = '1';
+          });
+        }
+        setWave(false);
+        if (statusTextEl) statusTextEl.textContent = 'Listening';
+      }, 1000);
+    }
+  }, 3200);
 }
+
+/* ─────────────────────────────────────────
+   PROGRESS BAR in scene transitions
+───────────────────────────────────────── */
+// The bar lives in the intro scenes — hide it once on home
+function hideProgressBar() {
+  const bar = document.getElementById('intro-bar');
+  if (bar) { bar.style.transition='opacity 0.6s'; bar.style.opacity='0'; }
+}
+
+/* ─────────────────────────────────────────
+   BOOT
+───────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Ensure all scenes start invisible except for sky
+  Object.entries(scenes).forEach(([key, el]) => {
+    if (!el) return;
+    if (key !== 'sky') {
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    }
+  });
+
+  // Small boot delay for fonts to load
+  setTimeout(startIntro, 200);
+});
