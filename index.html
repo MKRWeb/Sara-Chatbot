@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meet Sara - A Quiet Place</title>
+    <title>Deep Dive - Sara</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,24 +14,26 @@
 
     <canvas id="webgl-canvas"></canvas>
 
+    <div id="scroll-track"></div>
+
     <div id="intro-container" class="ui-container">
         <div class="text-section" id="sec-0">
-            <h1>When the world gets<br><em>a little too loud.</em></h1>
+            <h1>The only natural multivitamin<br><em>you will ever need.</em></h1>
         </div>
         
         <div class="text-section" id="sec-1">
-            <h1>And you just need<br>someone to listen.</h1>
+            <h1>Energy Levels<br><em>The real limitless pill.</em></h1>
         </div>
         
         <div class="text-section" id="sec-2">
-            <h1>No judgment.<br><em>No pressure.</em></h1>
+            <h1>100% wildcrafted and<br><em>raw herbs.</em></h1>
         </div>
         
         <div class="text-section final-section" id="sec-3">
             <p class="subtitle">MEET SARA</p>
-            <h1>Someone to<br>talk to.</h1>
-            <p class="description">A quiet place to share what's on your mind.</p>
-            <button id="say-hello-btn" class="chat-btn">Say hello</button>
+            <h1>A better you<br>starts here.</h1>
+            <p class="description">Are you ready to dive in?</p>
+            <button id="say-hello-btn" class="chat-btn">Enter Chat</button>
         </div>
     </div>
 
@@ -44,8 +46,7 @@
                     <p>Online • Listening</p>
                 </div>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                </div>
+            <div class="chat-messages" id="chat-messages"></div>
             <div class="chat-input-area">
                 <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
                 <button id="send-btn">
@@ -56,7 +57,7 @@
     </div>
 
     <div id="farewell-overlay">
-        <h2>Take all the time you need.<br><em>I'll be right here waiting for you.</em> 🌊</h2>
+        <h2>Take all the time you need.<br><em>I'll be right here waiting for you.</em> 💜</h2>
     </div>
 
     <script src="script.js"></script>
