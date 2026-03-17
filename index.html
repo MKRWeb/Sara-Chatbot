@@ -3,21 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07090a">
   <title>Sara — A Quiet Place</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
-  <!-- Three.js r128 for WebGL rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Custom cursor -->
   <div id="c-dot"></div>
   <div id="c-ring"></div>
 
-  <!-- Nav overlay -->
   <nav id="main-nav">
     <span class="nav-logo">Sara</span>
     <ul class="nav-links">
@@ -27,17 +25,10 @@
     </ul>
   </nav>
 
-  <!-- ══════════════════════════════════
-       INTRO LAYER
-       WebGL canvas fills entire screen.
-       HTML word-reveal layers on top.
-  ══════════════════════════════════ -->
   <div id="intro-wrap">
 
-    <!-- Main WebGL canvas: sky → underwater journey -->
     <canvas id="main-canvas"></canvas>
 
-    <!-- Grain texture overlay (SVG filter) -->
     <svg id="grain-svg" xmlns="http://www.w3.org/2000/svg">
       <filter id="grain-filter" x="0%" y="0%" width="100%" height="100%"
         color-interpolation-filters="linearRGB">
@@ -50,13 +41,10 @@
       <rect width="100%" height="100%" filter="url(#grain-filter)" opacity="0.045"/>
     </svg>
 
-    <!-- Vignette -->
     <div id="vignette"></div>
 
-    <!-- Progress bar -->
     <div id="prog-bar"><div id="prog-fill"></div></div>
 
-    <!-- Scene 1 headline -->
     <div class="hl-stage" id="hl-1">
       <div class="hl-line">
         <span class="wm"><b class="w">When</b></span>
@@ -71,7 +59,6 @@
       </div>
     </div>
 
-    <!-- Scene 2 headline -->
     <div class="hl-stage" id="hl-2">
       <div class="hl-line center">
         <span class="wm"><b class="w">And</b></span>
@@ -86,7 +73,6 @@
       </div>
     </div>
 
-    <!-- Scene 3 headline -->
     <div class="hl-stage" id="hl-3">
       <div class="hl-line">
         <span class="wm"><b class="w">No</b></span>
@@ -98,7 +84,6 @@
       </div>
     </div>
 
-    <!-- Scene 4 headline -->
     <div class="hl-stage center-stage" id="hl-4">
       <div class="hl-line center">
         <span class="wm"><b class="w">Meet</b></span>
@@ -106,12 +91,7 @@
       </div>
     </div>
 
-  </div><!-- /intro-wrap -->
-
-  <!-- ══════════════════════════════════
-       SARA HOME
-  ══════════════════════════════════ -->
-  <div id="sara-home" class="phase-off">
+  </div><div id="sara-home" class="phase-off">
     <canvas id="home-canvas"></canvas>
     <div id="home-orbs">
       <div class="orb o1"></div>
@@ -150,15 +130,11 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════
-       CHAT
-  ══════════════════════════════════ -->
   <div id="chat-wrap" class="phase-off">
     <canvas id="chat-canvas"></canvas>
     <div id="chat-orb1"></div>
     <div id="chat-orb2"></div>
 
-    <!-- Tree silhouettes -->
     <div id="chat-trees">
       <svg viewBox="0 0 1440 240" preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg">
@@ -207,14 +183,12 @@
         <div class="day-sep"><span>Today</span></div>
       </div>
 
-      <!-- Voice wave (thinking indicator) -->
       <div id="vwave">
         <span class="vb"></span><span class="vb"></span><span class="vb"></span>
         <span class="vb"></span><span class="vb"></span><span class="vb"></span>
         <span class="vb"></span>
       </div>
 
-      <!-- Chips -->
       <div id="chips">
         <button class="chip" data-msg="I'm feeling really anxious today">😶 Anxious</button>
         <button class="chip" data-msg="I just need to vent right now">💬 Vent</button>
@@ -238,7 +212,6 @@
     </div>
   </div>
 
-  <!-- Farewell -->
   <div id="farewell" class="phase-off">
     <div id="fw-inner">
       <div id="fw-glyph">✦</div>
@@ -249,4 +222,5 @@
 
   <script src="script.js"></script>
 </body>
-</html>
+                                                         </html>
+            
