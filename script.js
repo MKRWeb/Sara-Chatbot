@@ -42,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let autoProgress = 0;   
     let targetCameraZ = 0;
     let isChatting = false;
-    let isExiting = false; // Tracks if the 15-second exit timer is running
 
     const sections = [
         document.getElementById('sec-0'), document.getElementById('sec-1'),
@@ -126,66 +125,44 @@ document.addEventListener("DOMContentLoaded", () => {
     // Entering Chat
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
-        isExiting = false;
         
         // Push state to browser history (Intercept Back Button)
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
 
         introSequence.style.display = 'none'; 
         chatInterface.classList.remove('hidden'); 
-        chatInput.disabled = false;
-        sendBtn.disabled = false;
         
         setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. I'm here to listen whenever you're ready. 💖"), 800);
     });
 
-    // Handle Back Button (Delayed Exit)
+    // Handle Back Button (Exiting Chat)
     window.addEventListener('popstate', (event) => {
-        if (isChatting && !isExiting) {
-            handleDelayedExit();
+        if (isChatting) {
+            handleExitChat();
         }
     });
 
-    function handleDelayedExit() {
-        isExiting = true;
+    function handleExitChat() {
+        isChatting = false;
         
-        // Push state AGAIN so the user doesn't accidentally leave while waiting
-        history.pushState({ page: 'exiting' }, 'Leaving soon', '#leaving');
+        // Hide chat interface
+        chatInterface.classList.add('hidden');
+        
+        // Show farewell charming message
+        farewellOverlay.style.opacity = '1';
+        farewellOverlay.style.pointerEvents = 'auto';
 
-        // Disable input so they can't send more messages while exiting
-        chatInput.disabled = true;
-        sendBtn.disabled = true;
-        chatInput.placeholder = "Closing soon...";
-
-        // Sara lets them know she's giving them time
+        // Wait 3 seconds, hide farewell, and return to Home Screen
         setTimeout(() => {
-            appendMessage("bot", "I see you have to go. I'll leave our messages up for 15 seconds so you can finish reading. 🌸");
-        }, 500);
-
-        // 15 Second Timer before the final farewell screen
-        setTimeout(() => {
-            chatInterface.classList.add('hidden');
-            farewellOverlay.style.opacity = '1';
-            farewellOverlay.style.pointerEvents = 'auto';
-
-            // Wait 3 seconds, hide farewell, and return to Home Screen
+            farewellOverlay.style.opacity = '0';
+            farewellOverlay.style.pointerEvents = 'none';
+            
             setTimeout(() => {
-                farewellOverlay.style.opacity = '0';
-                farewellOverlay.style.pointerEvents = 'none';
-                
-                setTimeout(() => {
-                    introSequence.style.display = 'flex';
-                    autoProgress = 1.0; 
-                    isChatting = false;
-                    
-                    // Optional: Clear chat history for the next time they click "Say hello"
-                    chatMessages.innerHTML = '';
-                    chatInput.value = '';
-                    chatInput.placeholder = "Type a message...";
-                }, 1000); // Wait for fade out
-                
-            }, 3000); // 3 seconds to read the final overlay message
-        }, 15000); // 15 SECONDS WAIT TIME
+                introSequence.style.display = 'flex';
+                autoProgress = 1.0; // Ensure we are exactly at the "Say hello" screen
+            }, 1000); // Wait for fade out
+            
+        }, 3000); // 3 seconds to read the message
     }
 
     function appendMessage(sender, text) {
@@ -198,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function handleSend() {
         const text = chatInput.value.trim();
-        if (!text || isExiting) return;
+        if (!text) return;
 
         appendMessage('user', text);
         chatInput.value = '';
@@ -231,4 +208,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-        
+    
