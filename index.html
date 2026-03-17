@@ -3,19 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cinematic Auto-Play - Sara</title>
+    <title>Organimo - The Natural Multivitamin</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="video-container">
-        <video id="bg-video" autoplay muted playsinline preload="auto">
-            <source src="InShot_20260317_201651153.mp4" type="video/mp4">
-        </video>
-    </div>
+    <canvas id="webgl-canvas"></canvas>
 
     <div id="intro-container" class="ui-container">
         <div class="text-section" id="sec-0">
@@ -23,18 +20,23 @@
         </div>
         
         <div class="text-section" id="sec-1">
-            <h1>Energy Levels<br><em>The real limitless pill.</em></h1>
+            <p class="subtitle">100% ETHICAL & RENEWABLE</p>
+            <h1>All naturally sourced<br>marine ingredients<br><em>from Canada.</em></h1>
         </div>
         
         <div class="text-section" id="sec-2">
-            <h1>100% wildcrafted and<br><em>raw herbs.</em></h1>
+            <h1>The real<br><em>limitless pill.</em></h1>
+        </div>
+
+        <div class="text-section" id="sec-3">
+            <h1>100% wildcrafted<br><em>and raw herbs.</em></h1>
         </div>
         
-        <div class="text-section final-section" id="sec-3">
-            <p class="subtitle">MEET SARA</p>
+        <div class="text-section final-section" id="sec-4">
+            <p class="subtitle">ORGANIMO WELLNESS</p>
             <h1>A better you<br>starts here.</h1>
-            <p class="description">Are you ready to dive in?</p>
-            <button id="say-hello-btn" class="chat-btn">Enter Chat</button>
+            <p class="description">Have questions? Chat with our marine health specialist.</p>
+            <button id="say-hello-btn" class="chat-btn">Ask Sara</button>
         </div>
     </div>
 
@@ -44,10 +46,11 @@
                 <div class="avatar">S</div>
                 <div class="header-info">
                     <h2>Sara</h2>
-                    <p>Online • Listening</p>
+                    <p>Online • Organimo Health Guide</p>
                 </div>
             </div>
-            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-messages" id="chat-messages">
+                </div>
             <div class="chat-input-area">
                 <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
                 <button id="send-btn">
@@ -58,7 +61,7 @@
     </div>
 
     <div id="farewell-overlay">
-        <h2>Take all the time you need.<br><em>I'll be right here waiting for you.</em> 💜</h2>
+        <h2>Take all the time you need.<br><em>Your wellness journey awaits.</em> 🌊</h2>
     </div>
 
     <script src="script.js"></script>
