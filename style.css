@@ -179,7 +179,9 @@ html, body {
 ═══════════════════════════════════════════════ */
 #sara-home {
   position:fixed; inset:0; z-index:200;
-  display:flex; align-items:center; justify-content:center;
+  display:none;
+  flex-direction:column;
+  align-items:center; justify-content:center;
   overflow:hidden;
   background:radial-gradient(ellipse 100% 80% at 50% 115%,
     #0d2010 0%, #080c0a 58%);
@@ -318,17 +320,41 @@ html, body {
 
 /* ═══════════════════════════════════════════════
    PHASE STATES
+   Rules are ordered so later classes win.
+   phase-off  → hidden (display:none)
+   phase-in   → flex + fade-in animation (stays visible after anim)
+   phase-flex → flex, no animation (instant show)
 ═══════════════════════════════════════════════ */
-.phase-off   { display:none !important; }
-.phase-in    { display:flex !important; animation:phaseReveal .9s var(--ease-out) both; }
-.phase-flex  { display:flex !important; }
+.phase-off {
+  display:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+/* phase-in: display:flex persists because it's a class, not an animation fill */
+.phase-in {
+  display:flex !important;
+  opacity:1;
+  animation:phaseReveal .9s var(--ease-out) both;
+}
+.phase-flex {
+  display:flex !important;
+  opacity:1;
+}
 @keyframes phaseReveal { from{opacity:0;} to{opacity:1;} }
+
+/* Intro wrap hidden state — separate from phase system */
+#intro-wrap.intro-done {
+  opacity:0 !important;
+  pointer-events:none !important;
+  /* keep display:block so WebGL canvas keeps rendering (needed for BG) */
+}
 
 /* ═══════════════════════════════════════════════
    CHAT
 ═══════════════════════════════════════════════ */
 #chat-wrap {
   position:fixed; inset:0; z-index:210;
+  display:none;
   align-items:center; justify-content:center;
   padding:clamp(0px,2vw,20px); overflow:hidden;
   background:radial-gradient(ellipse 130% 85% at 50% 115%,
@@ -620,6 +646,7 @@ html, body {
 /* ── FAREWELL ── */
 #farewell {
   position:fixed; inset:0; z-index:300;
+  display:none;
   align-items:center; justify-content:center;
   background:rgba(4,7,5,.97); backdrop-filter:blur(24px);
   text-align:center; padding:2rem;

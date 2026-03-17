@@ -376,11 +376,17 @@ oysterGroup.position.set(.6, 1.2, 3.2);
 oysterGroup.rotation.y = .35;
 objectGroup.add(oysterGroup);
 
-/* ── Bubbles (glass spheres) ── */
-const bubbleMat = new THREE.MeshPhysicalMaterial({
-  color: 0xffffff, roughness: .04, metalness: 0,
-  transmission: .96, thickness: .5,
-  reflectivity: .4, clearcoat: 1
+/* ── Bubbles (glass spheres) — MeshPhysicalMaterial transmission
+   requires WebGLRenderer.physicallyCorrectLights + env map in r128.
+   Use MeshStandardMaterial with high metalness trick instead ── */
+const bubbleMat = new THREE.MeshStandardMaterial({
+  color: 0xd8eef8,
+  roughness: 0.02,
+  metalness: 0.0,
+  transparent: true,
+  opacity: 0.38,
+  side: THREE.FrontSide,
+  envMapIntensity: 1.0,
 });
 const bubbleData = [
   { x: 2.8, y: 1.0, z: 1.4, r: .28 },
@@ -669,7 +675,7 @@ function runIntroSequence() {
                     setTimeout(() => {
                       exitWords('hl-3', () => {
                         animateValue(0, 1, 900, v => bgTransition = v, () => {
-                          bgSceneIdx = 4; bgTransition = 1;
+                          bgSceneIdx = 3; bgTransition = 1;
                           setProgress(88);
 
                           /* ── SCENE 3: Meet Sara ── */
@@ -678,17 +684,26 @@ function runIntroSequence() {
                             // Hold then go to home
                             setTimeout(() => {
                               exitWords('hl-4', () => {
-                                // Fade out entire intro
+                                // Stop progress tracker
+                                clearInterval(progressTracker);
+
+                                // Hide progress bar
+                                if (progFill) progFill.parentElement.style.opacity = '0';
+
+                                // Fade out intro overlay (NOT display:none — keep WebGL canvas for BG)
                                 if (introWrap) {
                                   introWrap.style.transition = 'opacity 1.1s ease';
                                   introWrap.style.opacity    = '0';
+                                  introWrap.style.pointerEvents = 'none';
                                 }
                                 if (nav) {
                                   nav.style.transition = 'opacity .8s ease';
                                   nav.style.opacity    = '0';
+                                  nav.style.pointerEvents = 'none';
                                 }
-                                clearInterval(progressTracker);
-                                setTimeout(showSaraHome, 700);
+
+                                // After fade completes, show Sara home
+                                setTimeout(showSaraHome, 1200);
                               });
                             }, HOLD.s3);
                           });
@@ -788,21 +803,43 @@ function makeParticleField(canvasId, cfg = {}) {
 function showSaraHome() {
   const home = document.getElementById('sara-home');
   if (!home) return;
-  home.classList.remove('phase-off');
-  home.classList.add('phase-in');
-  makeParticleField('home-canvas', { count: 42, speed: .18, opacity: .22, color: '80,140,82', connected: true, dist: 125 });
+
+  // Remove any phase classes that might conflict
+  home.classList.remove('phase-off', 'phase-in', 'phase-flex');
+
+  // Directly set display and animate opacity
+  home.style.display  = 'flex';
+  home.style.opacity  = '0';
+
+  // Small delay so display:flex registers before transition
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      home.style.transition = 'opacity 1s ease';
+      home.style.opacity    = '1';
+    });
+  });
+
+  // Init particle field
+  makeParticleField('home-canvas', {
+    count: 42, speed: .18, opacity: .22,
+    color: '80,140,82', connected: true, dist: 125
+  });
 }
 
 const sayHelloBtn = document.getElementById('say-hello-btn');
 if (sayHelloBtn) {
   sayHelloBtn.addEventListener('click', () => {
     const home = document.getElementById('sara-home');
-    if (home) { home.style.transition = 'opacity .6s ease'; home.style.opacity = '0'; home.style.pointerEvents = 'none'; }
+    if (home) {
+      home.style.transition    = 'opacity .6s ease';
+      home.style.opacity       = '0';
+      home.style.pointerEvents = 'none';
+    }
     setTimeout(() => {
-      if (home) home.classList.add('phase-off');
+      if (home) home.style.display = 'none';
       history.pushState({ page: 'chat' }, '', '#chat');
       openChat();
-    }, 600);
+    }, 650);
   });
 }
 
@@ -815,12 +852,27 @@ function openChat() {
   isChatting = true;
   const cw = document.getElementById('chat-wrap');
   if (!cw) return;
-  cw.classList.remove('phase-off');
-  cw.classList.add('phase-in');
+
+  // Direct show with fade-in
+  cw.classList.remove('phase-off', 'phase-in', 'phase-flex');
+  cw.style.display = 'flex';
+  cw.style.opacity = '0';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      cw.style.transition = 'opacity .7s ease';
+      cw.style.opacity    = '1';
+    });
+  });
+
   if (!chatInit) {
-    makeParticleField('chat-canvas', { count: 36, speed: .2, opacity: .18, color: '80,140,82', connected: true, dist: 105 });
+    makeParticleField('chat-canvas', {
+      count: 36, speed: .2, opacity: .18,
+      color: '80,140,82', connected: true, dist: 105
+    });
     chatInit = true;
   }
+
+  // Sara greeting: show wave then type
   setWave(true);
   setTimeout(() => {
     setWave(false);
@@ -941,10 +993,14 @@ async function handleSend() {
     const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(sys + ' User: "' + txt + '"')}`);
     const ai  = await res.text();
     setWave(false);
-    setTimeout(() => typeBot(ai.trim()), 280);
+    setTimeout(() => {
+      typeBot(ai.trim());
+      sendBtn.disabled = false;
+    }, 280);
   } catch {
     setWave(false);
     typeBot("I'm right here 🌿 The connection wavered but I didn't go anywhere.");
+    sendBtn.disabled = false;
   }
 }
 sendBtn?.addEventListener('click', handleSend);
@@ -960,25 +1016,69 @@ document.querySelectorAll('.chip').forEach(c => {
 
 /* Back → farewell */
 window.addEventListener('popstate', () => { if (isChatting) doFarewell(); });
+
 function doFarewell() {
   isChatting = false;
+
   const cw = document.getElementById('chat-wrap');
   const fw = document.getElementById('farewell');
-  if (cw) { cw.style.transition='opacity .5s'; cw.style.opacity='0'; }
-  if (fw) { fw.classList.remove('phase-off'); fw.classList.add('phase-flex'); }
+
+  // Fade out chat
+  if (cw) {
+    cw.style.transition    = 'opacity .5s ease';
+    cw.style.opacity       = '0';
+    cw.style.pointerEvents = 'none';
+  }
+
+  // Show farewell immediately
+  if (fw) {
+    fw.classList.remove('phase-off', 'phase-in');
+    fw.style.display  = 'flex';
+    fw.style.opacity  = '0';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        fw.style.transition = 'opacity .8s ease';
+        fw.style.opacity    = '1';
+      });
+    });
+  }
+
+  // After 3s: hide chat and farewell, restore home
   setTimeout(() => {
-    if (cw) cw.classList.add('phase-off');
-    if (fw) { fw.style.transition='opacity 1s'; fw.style.opacity='0'; }
+    if (cw) cw.style.display = 'none';
+
+    if (fw) {
+      fw.style.transition = 'opacity 1s ease';
+      fw.style.opacity    = '0';
+    }
+
     setTimeout(() => {
-      if (fw) { fw.classList.add('phase-off'); fw.style.opacity=''; }
-      const h = document.getElementById('sara-home');
-      if (h) {
-        h.classList.remove('phase-off'); h.style.opacity='0';
-        h.classList.add('phase-in');
-        requestAnimationFrame(() => { h.style.transition='opacity .8s'; h.style.opacity='1'; });
+      if (fw) fw.style.display = 'none';
+
+      // Restore Sara home
+      const home = document.getElementById('sara-home');
+      if (home) {
+        home.style.display     = 'flex';
+        home.style.opacity     = '0';
+        home.style.pointerEvents = 'auto';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            home.style.transition = 'opacity .8s ease';
+            home.style.opacity    = '1';
+          });
+        });
       }
+
+      // Reset chat state
+      chipsOn = true;
+      chatInit = false;
+      const chips = document.getElementById('chips');
+      if (chips) chips.classList.remove('gone');
+      const msgs = document.getElementById('msgs');
+      if (msgs) msgs.innerHTML = '<div class="day-sep"><span>Today</span></div>';
       setWave(false);
-    }, 1000);
+
+    }, 1100);
   }, 3200);
 }
 
