@@ -1,151 +1,149 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Cinematic Dive Setup (r128 Safe) ---
+    // --- 1. Three.js Scroll-Driven Setup ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
     
-    // Color Palette based on the video (Surface Pink -> Deep Purple)
-    const surfaceColor = new THREE.Color(0xfbb4b4); // Peachy pink
-    const midColor = new THREE.Color(0x8e54e9);     // Vibrant purple
-    const deepColor = new THREE.Color(0x2a0845);    // Deep dark purple
+    // Color Palette: Pink Surface -> Purple Mid -> Dark Violet Deep
+    const colorTop = new THREE.Color(0xfbb4b4); 
+    const colorMid = new THREE.Color(0x6a2a88);     
+    const colorDeep = new THREE.Color(0x220b34);    
     
-    scene.background = surfaceColor;
-    scene.fog = new THREE.FogExp2(surfaceColor, 0.0015);
+    scene.background = colorTop;
+    scene.fog = new THREE.FogExp2(colorTop, 0.0012);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 50, 400); 
+    // Start at the surface
+    camera.position.set(0, 100, 400); 
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- 2. Lighting ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // --- 2. Cinematic Lighting ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffeedd, 1);
-    directionalLight.position.set(100, 200, 50);
+    const directionalLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    directionalLight.position.set(100, 200, 100);
     scene.add(directionalLight);
 
-    const pointLight = new THREE.PointLight(0xffaaff, 2, 500);
+    const pointLight = new THREE.PointLight(0xffaaff, 2, 600);
     scene.add(pointLight);
 
-    // --- 3. Optimized 3D Objects ---
+    // --- 3. Code-Generated 3D Objects ---
     const floatingObjects = [];
 
-    // Materials
-    const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8 });
-    const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.3 });
-    const glassMaterial = new THREE.MeshStandardMaterial({ color: 0xffaaff, transparent: true, opacity: 0.6, roughness: 0.1, metalness: 0.2 });
-    const goldMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.8, roughness: 0.2 });
+    // Premium Materials
+    const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.9 });
+    const shellMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
+    const pillMaterial = new THREE.MeshPhysicalMaterial({ color: 0xffaaff, transmission: 0.8, opacity: 1, transparent: true, roughness: 0.1 });
+    const goldMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.9, roughness: 0.2 });
 
-    // Object 1: Floating Ruin / Column
-    const columnGeo = new THREE.CylinderGeometry(15, 15, 80, 16);
+    // Object 1: Ruins (Cylinders) - Surface Level
+    const columnGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
     const column = new THREE.Mesh(columnGeo, stoneMaterial);
-    column.position.set(-80, 20, 150);
-    column.rotation.z = Math.PI / 6;
+    column.position.set(-90, 20, 100);
+    column.rotation.z = Math.PI / 8;
     scene.add(column);
-    floatingObjects.push({ mesh: column, bobSpeed: 1.5, rotSpeed: 0.005 });
+    floatingObjects.push({ mesh: column, rotSpeedX: 0.002, rotSpeedY: 0.005 });
 
-    // Object 2: Floating Rocks
-    const rockGeo = new THREE.BoxGeometry(40, 10, 30);
-    for(let i=0; i<3; i++) {
-        const rock = new THREE.Mesh(rockGeo, stoneMaterial);
-        rock.position.set(60 + (i*40), 10 - (i*20), 100 - (i*30));
-        scene.add(rock);
-        floatingObjects.push({ mesh: rock, bobSpeed: 1.2 + i*0.2, rotSpeed: 0.01 });
+    // Object 2: Organic Shell Proxy (TorusKnot) - Upper Mid Level
+    const shellGeo = new THREE.TorusKnotGeometry(20, 6, 100, 16);
+    const shell = new THREE.Mesh(shellGeo, shellMaterial);
+    shell.position.set(80, -500, 50);
+    scene.add(shell);
+    floatingObjects.push({ mesh: shell, rotSpeedX: 0.005, rotSpeedY: 0.01 });
+
+    // Object 3: Limitless Pills (Stretched Spheres) - Deep Mid Level
+    const pillGeo = new THREE.SphereGeometry(8, 32, 32);
+    for(let i=0; i<4; i++) {
+        const pill = new THREE.Mesh(pillGeo, pillMaterial);
+        pill.scale.set(1, 2.5, 1); // Stretch to make a pill shape
+        pill.position.set((Math.random() - 0.5) * 200, -1200 - (Math.random() * 400), (Math.random() - 0.5) * 150);
+        scene.add(pill);
+        floatingObjects.push({ mesh: pill, rotSpeedX: 0.02, rotSpeedY: 0.03 });
     }
 
-    // Object 3: Glowing Pearl (Mid depth)
-    const pearlGeo = new THREE.SphereGeometry(20, 32, 32);
-    const pearl = new THREE.Mesh(pearlGeo, pearlMaterial);
-    pearl.position.set(0, -600, 50);
-    scene.add(pearl);
-    floatingObjects.push({ mesh: pearl, bobSpeed: 2.0, rotSpeed: 0.02 });
-
-    // Object 4: Floating "Capsules" (Using stretched spheres for r128 compatibility)
-    const capsuleGeo = new THREE.SphereGeometry(10, 32, 32);
-    for(let i=0; i<5; i++) {
-        const capsule = new THREE.Mesh(capsuleGeo, glassMaterial);
-        // Stretch it to look like a pill/capsule
-        capsule.scale.set(1, 2, 1);
-        capsule.position.set((Math.random() - 0.5) * 300, -1200 - (Math.random() * 400), (Math.random() - 0.5) * 200);
-        scene.add(capsule);
-        floatingObjects.push({ mesh: capsule, bobSpeed: 1.8, rotSpeed: 0.03 });
-    }
-
-    // Object 5: Geometric Pyramid (Ocean Floor)
-    const pyramidGeo = new THREE.ConeGeometry(50, 80, 4);
+    // Object 4: The Golden Pyramid - Ocean Floor
+    const pyramidGeo = new THREE.ConeGeometry(60, 90, 4);
     const pyramid = new THREE.Mesh(pyramidGeo, goldMaterial);
-    pyramid.position.set(50, -2200, -50);
+    pyramid.position.set(40, -2200, -50);
     scene.add(pyramid);
-    floatingObjects.push({ mesh: pyramid, bobSpeed: 0.5, rotSpeed: 0.005 });
+    floatingObjects.push({ mesh: pyramid, rotSpeedX: 0.002, rotSpeedY: 0.008 });
 
-    // Ocean floor plane
-    const floorGeo = new THREE.PlaneGeometry(2000, 2000);
+    // The Ocean Floor
+    const floorGeo = new THREE.PlaneGeometry(3000, 3000);
     const floorMat = new THREE.MeshStandardMaterial({ color: 0x110522, roughness: 1 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -2300;
     scene.add(floor);
 
-    // Bubbles for atmosphere
-    const bubbleGeo = new THREE.SphereGeometry(2, 8, 8);
-    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
-    const bubbles = [];
-    for(let i=0; i<100; i++) {
-        const bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
-        bubble.position.set((Math.random() - 0.5)*800, (Math.random() * -2400), (Math.random() - 0.5)*800);
-        scene.add(bubble);
-        bubbles.push(bubble);
+    // Particles/Bubbles
+    const particleGeo = new THREE.BufferGeometry();
+    const particleCount = 400;
+    const posArray = new Float32Array(particleCount * 3);
+    for(let i=0; i < particleCount * 3; i+=3) {
+        posArray[i] = (Math.random() - 0.5) * 1000;       // x
+        posArray[i+1] = (Math.random() - 0.5) * -2500;    // y
+        posArray[i+2] = (Math.random() - 0.5) * 1000;     // z
     }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    const particleMat = new THREE.PointsMaterial({ size: 2, color: 0xffffff, transparent: true, opacity: 0.4 });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
 
-    // --- 4. Auto-Animation & Drone Diving Logic ---
-    let autoProgress = 0;   
-    let targetCameraY = 50;
-    let isChatting = false;
-    const maxDepth = -2100; // Stops just above the floor
+    // --- 4. Scroll Engine ---
+    let targetScrollProgress = 0;
+    let currentScrollProgress = 0;
+    const maxDepth = -2150; 
 
+    // Listen to user scrolling
+    window.addEventListener('scroll', () => {
+        // Calculate percentage of page scrolled (0.0 to 1.0)
+        const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+        targetScrollProgress = window.scrollY / scrollableHeight;
+    });
+
+    // UI Text Timings based on Scroll %
     const sections = [
         document.getElementById('sec-0'), document.getElementById('sec-1'),
         document.getElementById('sec-2'), document.getElementById('sec-3')
     ];
-
     const sectionTimings = [
-        { start: 0.00, peak: 0.05, hold: 0.18, end: 0.25 },
-        { start: 0.25, peak: 0.30, hold: 0.43, end: 0.50 },
-        { start: 0.50, peak: 0.55, hold: 0.68, end: 0.75 },
+        { start: 0.00, peak: 0.08, hold: 0.15, end: 0.22 },
+        { start: 0.25, peak: 0.33, hold: 0.40, end: 0.47 },
+        { start: 0.50, peak: 0.58, hold: 0.65, end: 0.72 },
         { start: 0.75, peak: 0.85, hold: 1.00, end: 1.00 }
     ];
 
-    function updateHTMLUI() {
-        if(isChatting) return;
-        
+    function updateHTMLUI(progress) {
         sections.forEach((sec, index) => {
-            if(!sec) return; // Safety check
+            if(!sec) return;
             const t = sectionTimings[index];
-            let opacity = 0; let scale = 0.8;
+            let opacity = 0; let scale = 0.85;
 
-            if (autoProgress >= t.start && autoProgress <= t.end) {
-                if (autoProgress < t.peak) {
-                    const p = (autoProgress - t.start) / (t.peak - t.start);
-                    opacity = p; scale = 0.8 + (p * 0.2);
-                } else if (autoProgress <= t.hold) {
+            if (progress >= t.start && progress <= t.end) {
+                if (progress < t.peak) {
+                    const p = (progress - t.start) / (t.peak - t.start);
+                    opacity = p; scale = 0.85 + (p * 0.15);
+                } else if (progress <= t.hold) {
                     opacity = 1; scale = 1.0;
                 } else if (index !== sections.length - 1) { 
-                    const p = (autoProgress - t.hold) / (t.end - t.hold);
-                    opacity = 1 - (p * 1.5); if(opacity < 0) opacity = 0;
-                    scale = 1.0 + (p * 4.0); 
+                    const p = (progress - t.hold) / (t.end - t.hold);
+                    opacity = 1 - p; 
+                    scale = 1.0 + (p * 0.5); 
                 } else {
                     opacity = 1; scale = 1;
                 }
-            } else if (index === sections.length - 1 && autoProgress > t.end) {
+            } else if (index === sections.length - 1 && progress > t.end) {
                 opacity = 1; scale = 1;
             }
 
-            sec.style.opacity = opacity;
+            sec.style.opacity = Math.max(0, opacity);
             sec.style.transform = `scale(${scale})`;
             sec.style.pointerEvents = opacity > 0.8 ? 'auto' : 'none';
         });
@@ -157,63 +155,59 @@ document.addEventListener("DOMContentLoaded", () => {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.0006; // Smooth, cinematic dive speed
-            if (autoProgress > 1.0) autoProgress = 1.0;
-            targetCameraY = 50 + (autoProgress * maxDepth);
-        }
+        // Lerp (smooth out) the scroll progress so it glides like Apple websites
+        currentScrollProgress += (targetScrollProgress - currentScrollProgress) * 0.05;
 
-        // Camera Movement
-        camera.position.y += (targetCameraY - camera.position.y) * 0.03;
-        camera.position.x = Math.sin(time * 0.3) * 20; // Drone sway
-        camera.lookAt(camera.position.x, camera.position.y, 0); // Keep camera looking forward
+        // Move Camera based on scroll
+        camera.position.y = 100 + (currentScrollProgress * maxDepth);
+        
+        // Gentle drone sway
+        camera.position.x = Math.sin(time * 0.4) * 15; 
+        camera.lookAt(camera.position.x, camera.position.y, 0); 
         
         // Point light follows camera
         pointLight.position.set(camera.position.x, camera.position.y, camera.position.z - 50);
 
-        // Safe r128 Color Lerping
-        let currentColor;
-        if (autoProgress < 0.5) {
-            currentColor = surfaceColor.clone().lerp(midColor, autoProgress * 2);
+        // Dynamic Color Blending based on Scroll Depth
+        let renderColor = new THREE.Color();
+        if (currentScrollProgress < 0.5) {
+            // Top half: Pink to Mid Purple
+            const mix = currentScrollProgress * 2;
+            renderColor.copy(colorTop).lerp(colorMid, mix);
         } else {
-            currentColor = midColor.clone().lerp(deepColor, (autoProgress - 0.5) * 2);
+            // Bottom half: Mid Purple to Deep Violet
+            const mix = (currentScrollProgress - 0.5) * 2;
+            renderColor.copy(colorMid).lerp(colorDeep, mix);
         }
         
-        scene.background = currentColor;
-        scene.fog.color = currentColor;
-        scene.fog.density = 0.0015 + (autoProgress * 0.002);
+        scene.background = renderColor;
+        scene.fog.color = renderColor;
+        scene.fog.density = 0.0012 + (currentScrollProgress * 0.002); // Thicker at bottom
 
-        // Animate Objects
+        // Rotate Objects
         floatingObjects.forEach((obj, index) => {
-            obj.mesh.position.y += Math.sin(time * obj.bobSpeed + index) * 0.05;
-            obj.mesh.rotation.x += obj.rotSpeed;
-            obj.mesh.rotation.y += obj.rotSpeed;
+            obj.mesh.rotation.x += obj.rotSpeedX;
+            obj.mesh.rotation.y += obj.rotSpeedY;
+            obj.mesh.position.y += Math.sin(time * 2 + index) * 0.1; // Bobbing
         });
 
-        // Animate Bubbles
-        bubbles.forEach(bubble => {
-            bubble.position.y += 0.5;
-            if (bubble.position.y > camera.position.y + 200) {
-                bubble.position.y = camera.position.y - 800;
-            }
-        });
+        // Drift Particles
+        particles.position.y = Math.sin(time * 0.5) * 20;
 
-        updateHTMLUI();
+        updateHTMLUI(currentScrollProgress);
         renderer.render(scene, camera);
     }
-    
-    // Start animation loop
     animate();
 
+    // Handle Resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 5. Chatbot Logic ---
+    // --- 5. Chat Interface Logic ---
     const sayHelloBtn = document.getElementById('say-hello-btn');
-    const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
@@ -222,41 +216,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(sayHelloBtn) {
         sayHelloBtn.addEventListener('click', () => {
-            isChatting = true;
+            document.body.style.overflow = 'hidden'; // Lock scrolling
             history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
-
-            introSequence.style.display = 'none'; 
             chatInterface.classList.remove('hidden'); 
             
             if(chatMessages.children.length === 0) {
-                setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe down here. I'm ready to listen. 💜"), 800);
+                setTimeout(() => appendMessage("bot", "Hi there. You made it to the bottom. I'm ready to listen. 💜"), 800);
             }
         });
     }
 
     window.addEventListener('popstate', (event) => {
-        if (isChatting) {
+        if (!chatInterface.classList.contains('hidden')) {
             handleExitChat();
         }
     });
 
     function handleExitChat() {
-        isChatting = false;
         chatInterface.classList.add('hidden');
-        
         farewellOverlay.style.opacity = '1';
         farewellOverlay.style.pointerEvents = 'auto';
 
         setTimeout(() => {
             farewellOverlay.style.opacity = '0';
             farewellOverlay.style.pointerEvents = 'none';
-            
-            setTimeout(() => {
-                introSequence.style.display = 'flex';
-                autoProgress = 1.0; 
-                updateHTMLUI();
-            }, 1000); 
-            
+            document.body.style.overflow = 'auto'; // Unlock scrolling
+            document.body.style.overflowX = 'hidden';
         }, 3000); 
     }
 
@@ -284,21 +269,18 @@ document.addEventListener("DOMContentLoaded", () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const systemPrompt = "You are Sara. You are a romantic, sweet, deeply empathetic, and completely non-judgmental listener. Keep your responses brief, conversational, and comforting. Do not act like a robot.";
+            const systemPrompt = "You are Sara. You are a romantic, sweet, deeply empathetic, and completely non-judgmental listener.";
             const fullPrompt = `${systemPrompt} The user says: "${text}"`;
-            
             const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`);
             const aiText = await response.text();
 
             const typingEl = document.getElementById(typingId);
             if(typingEl) typingEl.remove();
-            
             appendMessage('bot', aiText);
         } catch (error) {
             const typingEl = document.getElementById(typingId);
             if(typingEl) typingEl.remove();
-            
-            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. 💜");
+            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here. 💜");
         }
     }
 
