@@ -1,109 +1,115 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Oceanic Drone Setup ---
+    // --- 1. Three.js Cinematic Dive Setup ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
     
-    // Deeper, vibrant reef colors
-    const surfaceColor = new THREE.Color(0x0088cc);
-    const deepReefColor = new THREE.Color(0x001e36);
+    // Color Palette based on the video (Surface Pink -> Deep Purple)
+    const surfaceColor = new THREE.Color(0xfbb4b4); // Peachy pink
+    const midColor = new THREE.Color(0x8e54e9);     // Vibrant purple
+    const deepColor = new THREE.Color(0x2a0845);    // Deep dark purple
     
     scene.background = surfaceColor;
     scene.fog = new THREE.FogExp2(surfaceColor, 0.0015);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 0, 400); 
+    camera.position.set(0, 50, 400); 
 
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- 2. Crash-Proof Entity Generation (Texture Caching) ---
-    // We create the textures ONCE to save memory, preventing browser crashes.
-    const seaCreatures = [
-        { char: '🐠', type: 'fish', speed: 1.5, size: 20 },
-        { char: '🐟', type: 'fish', speed: 1.2, size: 18 },
-        { char: '🐡', type: 'fish', speed: 1.0, size: 22 },
-        { char: '🐙', type: 'creature', speed: 0.4, size: 30 },
-        { char: '🧜‍♀️', type: 'mermaid', speed: 0.6, size: 35 },
-        { char: '🐳', type: 'whale', speed: 0.2, size: 60 },
-        { char: '🐋', type: 'whale', speed: 0.3, size: 70 },
-        { char: '🪸', type: 'coral', speed: 0, size: 50 }
-    ];
+    // --- 2. Lighting (Crucial for the premium feel) ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
 
-    const textureCache = {};
+    const directionalLight = new THREE.DirectionalLight(0xffeedd, 1);
+    directionalLight.position.set(100, 200, 50);
+    scene.add(directionalLight);
 
-    function createEmojiTexture(char) {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 128; tempCanvas.height = 128;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.font = '80px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(char, 64, 64);
-        return new THREE.CanvasTexture(tempCanvas);
-    }
+    const pointLight = new THREE.PointLight(0xffaaff, 2, 500);
+    scene.add(pointLight);
 
-    // Pre-load all textures into the cache
-    seaCreatures.forEach(creature => {
-        textureCache[creature.char] = createEmojiTexture(creature.char);
+    // --- 3. Optimized 3D Objects (No external models to prevent crashes) ---
+    const floatingObjects = [];
+
+    // Premium Materials
+    const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8 });
+    const pearlMaterial = new THREE.MeshPhysicalMaterial({ 
+        color: 0xffffff, metalness: 0.1, roughness: 0.1, transmission: 0.5, thickness: 1.0 
     });
+    const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xffaaff, metalness: 0.2, roughness: 0.1, transmission: 0.9, transparent: true
+    });
+    const goldMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.8, roughness: 0.2 });
 
-    const floatingEntities = [];
+    // Object 1: Floating Ruin / Column (Top surface)
+    const columnGeo = new THREE.CylinderGeometry(15, 15, 80, 16);
+    const column = new THREE.Mesh(columnGeo, stoneMaterial);
+    column.position.set(-80, 20, 150);
+    column.rotation.z = Math.PI / 6;
+    scene.add(column);
+    floatingObjects.push({ mesh: column, bobSpeed: 1.5, rotSpeed: 0.005 });
 
-    // Spawn 150 entities scattered through the depth
-    for(let i = 0; i < 150; i++) {
-        // Pick a random creature
-        const template = seaCreatures[Math.floor(Math.random() * seaCreatures.length)];
-        
-        // Reuse the cached texture
-        const material = new THREE.SpriteMaterial({ map: textureCache[template.char], transparent: true });
-        const sprite = new THREE.Sprite(material);
-
-        let yPos, xPos, zPos;
-        
-        // Corals stay at the bottom of the reef, others swim everywhere
-        if (template.type === 'coral') {
-            yPos = -2200 - Math.random() * 400; // Ocean floor
-        } else {
-            yPos = (Math.random() - 0.5) * -2500; // Scattered depths
-        }
-        
-        xPos = (Math.random() - 0.5) * 1200;
-        zPos = (Math.random() - 0.5) * 800 - 100;
-
-        sprite.position.set(xPos, yPos, zPos);
-        
-        // Add some random size variance
-        const sizeVariance = template.size * (0.8 + Math.random() * 0.4);
-        sprite.scale.set(sizeVariance, sizeVariance, 1);
-        
-        // Flip sprites horizontally if they are swimming left
-        const direction = Math.random() > 0.5 ? 1 : -1;
-        if (direction === -1 && template.type !== 'coral') {
-            sprite.material.rotation = Math.PI; // Flip emoji
-            sprite.material.needsUpdate = true;
-        }
-
-        sprite.userData = { 
-            type: template.type,
-            speedX: direction * template.speed,
-            baseY: yPos,
-            bobSpeed: Math.random() * 2 + 1,
-            bobOffset: Math.random() * Math.PI * 2
-        };
-
-        scene.add(sprite);
-        floatingEntities.push(sprite);
+    // Object 2: Floating Rocks (Top surface)
+    const rockGeo = new THREE.BoxGeometry(40, 10, 30);
+    for(let i=0; i<3; i++) {
+        const rock = new THREE.Mesh(rockGeo, stoneMaterial);
+        rock.position.set(60 + (i*40), 10 - (i*20), 100 - (i*30));
+        scene.add(rock);
+        floatingObjects.push({ mesh: rock, bobSpeed: 1.2 + i*0.2, rotSpeed: 0.01 });
     }
 
-    // --- 3. Auto-Animation & Drone Diving Logic ---
+    // Object 3: Glowing Pearl (Mid depth)
+    const pearlGeo = new THREE.SphereGeometry(20, 32, 32);
+    const pearl = new THREE.Mesh(pearlGeo, pearlMaterial);
+    pearl.position.set(0, -600, 50);
+    scene.add(pearl);
+    floatingObjects.push({ mesh: pearl, bobSpeed: 2.0, rotSpeed: 0.02 });
+
+    // Object 4: Floating Capsules / Multivitamins (Deep)
+    const capsuleGeo = new THREE.CapsuleGeometry(10, 20, 16, 32);
+    for(let i=0; i<5; i++) {
+        const capsule = new THREE.Mesh(capsuleGeo, glassMaterial);
+        capsule.position.set((Math.random() - 0.5) * 300, -1200 - (Math.random() * 400), (Math.random() - 0.5) * 200);
+        scene.add(capsule);
+        floatingObjects.push({ mesh: capsule, bobSpeed: 1.8, rotSpeed: 0.03 });
+    }
+
+    // Object 5: Geometric Pyramid (Ocean Floor)
+    const pyramidGeo = new THREE.ConeGeometry(50, 80, 4);
+    const pyramid = new THREE.Mesh(pyramidGeo, goldMaterial);
+    pyramid.position.set(50, -2200, -50);
+    scene.add(pyramid);
+    floatingObjects.push({ mesh: pyramid, bobSpeed: 0.5, rotSpeed: 0.005 });
+
+    // Ocean floor plane
+    const floorGeo = new THREE.PlaneGeometry(2000, 2000);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x110522, roughness: 1 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2300;
+    scene.add(floor);
+
+    // Bubbles for atmosphere
+    const bubbleGeo = new THREE.SphereGeometry(2, 8, 8);
+    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+    const bubbles = [];
+    for(let i=0; i<100; i++) {
+        const bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        bubble.position.set((Math.random() - 0.5)*800, (Math.random() * -2400), (Math.random() - 0.5)*800);
+        scene.add(bubble);
+        bubbles.push(bubble);
+    }
+
+
+    // --- 4. Auto-Animation & Drone Diving Logic ---
     let autoProgress = 0;   
-    let targetCameraY = 0;
+    let targetCameraY = 50;
     let isChatting = false;
-    const maxDepth = -2300; 
+    const maxDepth = -2100; // Stops just above the floor
 
     const sections = [
         document.getElementById('sec-0'), document.getElementById('sec-1'),
@@ -154,34 +160,41 @@ document.addEventListener("DOMContentLoaded", () => {
         const time = clock.getElapsedTime();
         
         if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.0007; // Slow dive
+            autoProgress += 0.0006; // Smooth, cinematic dive speed
             if (autoProgress > 1.0) autoProgress = 1.0;
-            targetCameraY = autoProgress * maxDepth;
+            targetCameraY = 50 + (autoProgress * maxDepth);
         }
 
-        // Camera Drone Movement
+        // Camera Movement
         camera.position.y += (targetCameraY - camera.position.y) * 0.03;
-        // Add a gentle side-to-side drone sway
-        camera.position.x = Math.sin(time * 0.5) * 15;
+        camera.position.x = Math.sin(time * 0.3) * 20; // Drone sway
+        
+        // Point light follows camera to illuminate objects in the dark deep
+        pointLight.position.set(camera.position.x, camera.position.y, camera.position.z - 50);
 
-        // Dynamic Environment Colors
-        const currentColor = surfaceColor.clone().lerp(deepReefColor, autoProgress);
+        // Dynamic Environment Colors (Pink -> Purple -> Dark Purple)
+        let currentColor = new THREE.Color();
+        if (autoProgress < 0.5) {
+            currentColor.lerpColors(surfaceColor, midColor, autoProgress * 2);
+        } else {
+            currentColor.lerpColors(midColor, deepColor, (autoProgress - 0.5) * 2);
+        }
         scene.background = currentColor;
         scene.fog.color = currentColor;
-        scene.fog.density = 0.001 + (autoProgress * 0.0015);
+        scene.fog.density = 0.0015 + (autoProgress * 0.002);
 
-        // Animate Entities
-        floatingEntities.forEach((entity) => {
-            if (entity.userData.type !== 'coral') {
-                // Swim left/right
-                entity.position.x += entity.userData.speedX;
-                
-                // Gentle bobbing up and down
-                entity.position.y = entity.userData.baseY + Math.sin(time * entity.userData.bobSpeed + entity.userData.bobOffset) * 10;
+        // Animate Objects
+        floatingObjects.forEach((obj, index) => {
+            obj.mesh.position.y += Math.sin(time * obj.bobSpeed + index) * 0.05;
+            obj.mesh.rotation.x += obj.rotSpeed;
+            obj.mesh.rotation.y += obj.rotSpeed;
+        });
 
-                // Wrap around the screen horizontally so it feels infinite
-                if (entity.position.x > 800) entity.position.x = -800;
-                if (entity.position.x < -800) entity.position.x = 800;
+        // Animate Bubbles
+        bubbles.forEach(bubble => {
+            bubble.position.y += 0.5;
+            if (bubble.position.y > camera.position.y + 200) {
+                bubble.position.y = camera.position.y - 800;
             }
         });
 
@@ -196,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 4. Chatbot Logic ---
+    // --- 5. Chatbot Logic ---
     const sayHelloBtn = document.getElementById('say-hello-btn');
     const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
@@ -213,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chatInterface.classList.remove('hidden'); 
         
         if(chatMessages.children.length === 0) {
-            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe here. I'm ready to listen whenever you are. 🪸💙"), 800);
+            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe down here. I'm ready to listen. 💜"), 800);
         }
     });
 
@@ -277,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
             appendMessage('bot', aiText);
         } catch (error) {
             document.getElementById(typingId).remove();
-            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. 💙");
+            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. 💜");
         }
     }
 
@@ -286,4 +299,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-            
+                          
