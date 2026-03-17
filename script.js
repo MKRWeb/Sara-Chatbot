@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Cinematic Dive Setup ---
+    // --- 1. Three.js Cinematic Dive Setup (r128 Safe) ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- 2. Lighting (Crucial for the premium feel) ---
+    // --- 2. Lighting ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
@@ -32,20 +32,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const pointLight = new THREE.PointLight(0xffaaff, 2, 500);
     scene.add(pointLight);
 
-    // --- 3. Optimized 3D Objects (No external models to prevent crashes) ---
+    // --- 3. Optimized 3D Objects ---
     const floatingObjects = [];
 
-    // Premium Materials
+    // Materials
     const stoneMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.8 });
-    const pearlMaterial = new THREE.MeshPhysicalMaterial({ 
-        color: 0xffffff, metalness: 0.1, roughness: 0.1, transmission: 0.5, thickness: 1.0 
-    });
-    const glassMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0xffaaff, metalness: 0.2, roughness: 0.1, transmission: 0.9, transparent: true
-    });
+    const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.3 });
+    const glassMaterial = new THREE.MeshStandardMaterial({ color: 0xffaaff, transparent: true, opacity: 0.6, roughness: 0.1, metalness: 0.2 });
     const goldMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa00, metalness: 0.8, roughness: 0.2 });
 
-    // Object 1: Floating Ruin / Column (Top surface)
+    // Object 1: Floating Ruin / Column
     const columnGeo = new THREE.CylinderGeometry(15, 15, 80, 16);
     const column = new THREE.Mesh(columnGeo, stoneMaterial);
     column.position.set(-80, 20, 150);
@@ -53,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scene.add(column);
     floatingObjects.push({ mesh: column, bobSpeed: 1.5, rotSpeed: 0.005 });
 
-    // Object 2: Floating Rocks (Top surface)
+    // Object 2: Floating Rocks
     const rockGeo = new THREE.BoxGeometry(40, 10, 30);
     for(let i=0; i<3; i++) {
         const rock = new THREE.Mesh(rockGeo, stoneMaterial);
@@ -69,10 +65,12 @@ document.addEventListener("DOMContentLoaded", () => {
     scene.add(pearl);
     floatingObjects.push({ mesh: pearl, bobSpeed: 2.0, rotSpeed: 0.02 });
 
-    // Object 4: Floating Capsules / Multivitamins (Deep)
-    const capsuleGeo = new THREE.CapsuleGeometry(10, 20, 16, 32);
+    // Object 4: Floating "Capsules" (Using stretched spheres for r128 compatibility)
+    const capsuleGeo = new THREE.SphereGeometry(10, 32, 32);
     for(let i=0; i<5; i++) {
         const capsule = new THREE.Mesh(capsuleGeo, glassMaterial);
+        // Stretch it to look like a pill/capsule
+        capsule.scale.set(1, 2, 1);
         capsule.position.set((Math.random() - 0.5) * 300, -1200 - (Math.random() * 400), (Math.random() - 0.5) * 200);
         scene.add(capsule);
         floatingObjects.push({ mesh: capsule, bobSpeed: 1.8, rotSpeed: 0.03 });
@@ -104,7 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
         bubbles.push(bubble);
     }
 
-
     // --- 4. Auto-Animation & Drone Diving Logic ---
     let autoProgress = 0;   
     let targetCameraY = 50;
@@ -127,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if(isChatting) return;
         
         sections.forEach((sec, index) => {
+            if(!sec) return; // Safety check
             const t = sectionTimings[index];
             let opacity = 0; let scale = 0.8;
 
@@ -168,17 +166,19 @@ document.addEventListener("DOMContentLoaded", () => {
         // Camera Movement
         camera.position.y += (targetCameraY - camera.position.y) * 0.03;
         camera.position.x = Math.sin(time * 0.3) * 20; // Drone sway
+        camera.lookAt(camera.position.x, camera.position.y, 0); // Keep camera looking forward
         
-        // Point light follows camera to illuminate objects in the dark deep
+        // Point light follows camera
         pointLight.position.set(camera.position.x, camera.position.y, camera.position.z - 50);
 
-        // Dynamic Environment Colors (Pink -> Purple -> Dark Purple)
-        let currentColor = new THREE.Color();
+        // Safe r128 Color Lerping
+        let currentColor;
         if (autoProgress < 0.5) {
-            currentColor.lerpColors(surfaceColor, midColor, autoProgress * 2);
+            currentColor = surfaceColor.clone().lerp(midColor, autoProgress * 2);
         } else {
-            currentColor.lerpColors(midColor, deepColor, (autoProgress - 0.5) * 2);
+            currentColor = midColor.clone().lerp(deepColor, (autoProgress - 0.5) * 2);
         }
+        
         scene.background = currentColor;
         scene.fog.color = currentColor;
         scene.fog.density = 0.0015 + (autoProgress * 0.002);
@@ -201,6 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHTMLUI();
         renderer.render(scene, camera);
     }
+    
+    // Start animation loop
     animate();
 
     window.addEventListener('resize', () => {
@@ -218,17 +220,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const sendBtn = document.getElementById('send-btn');
     const farewellOverlay = document.getElementById('farewell-overlay');
 
-    sayHelloBtn.addEventListener('click', () => {
-        isChatting = true;
-        history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
+    if(sayHelloBtn) {
+        sayHelloBtn.addEventListener('click', () => {
+            isChatting = true;
+            history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
 
-        introSequence.style.display = 'none'; 
-        chatInterface.classList.remove('hidden'); 
-        
-        if(chatMessages.children.length === 0) {
-            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe down here. I'm ready to listen. 💜"), 800);
-        }
-    });
+            introSequence.style.display = 'none'; 
+            chatInterface.classList.remove('hidden'); 
+            
+            if(chatMessages.children.length === 0) {
+                setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe down here. I'm ready to listen. 💜"), 800);
+            }
+        });
+    }
 
     window.addEventListener('popstate', (event) => {
         if (isChatting) {
@@ -286,17 +290,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`);
             const aiText = await response.text();
 
-            document.getElementById(typingId).remove();
+            const typingEl = document.getElementById(typingId);
+            if(typingEl) typingEl.remove();
+            
             appendMessage('bot', aiText);
         } catch (error) {
-            document.getElementById(typingId).remove();
+            const typingEl = document.getElementById(typingId);
+            if(typingEl) typingEl.remove();
+            
             appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. 💜");
         }
     }
 
-    sendBtn.addEventListener('click', handleSend);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
-    });
+    if(sendBtn && chatInput) {
+        sendBtn.addEventListener('click', handleSend);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    }
 });
-                          
+        
