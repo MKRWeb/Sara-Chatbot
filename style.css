@@ -7,8 +7,7 @@ body, html {
     animation: gradientFlow 15s ease infinite;
     font-family: 'Playfair Display', serif;
     color: #333;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
+    overflow: hidden; /* Locks the screen for the auto-animation */
 }
 
 @keyframes gradientFlow {
@@ -25,20 +24,13 @@ body, html {
     z-index: 1; pointer-events: none;
 }
 
-/* Scroll Intro Sequence */
-.scroll-container {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 500vh;
-    z-index: 2;
-}
-
+/* UI Container fixed in center */
 .ui-container {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     display: flex; justify-content: center; align-items: center;
-    pointer-events: none;
+    z-index: 2; pointer-events: none;
 }
 
 .text-section {
@@ -152,5 +144,4 @@ h1 em { color: #d1497b; font-style: italic; }
 }
 #send-btn:hover { transform: scale(1.1); }
 
-@media (max-width: 768px) { h1 { font-size: 2.2rem; } .scroll-container { height: 600vh; } }
-        
+@media (max-width: 768px) { h1 { font-size: 2.2rem; } }
