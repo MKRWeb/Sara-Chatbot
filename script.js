@@ -1,111 +1,170 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Auto-Playing Video Logic ---
-    const video = document.getElementById('bg-video');
-    
-    // Fallback: Some browsers strictly block autoplay. This forces it to play.
-    video.play().catch(e => console.log("Waiting for user interaction to play video."));
+    // --- 1. Three.js Setup ---
+    const canvas = document.querySelector('#webgl-canvas');
+    if (!canvas) return;
 
-    // The Animation Loop (Watches the video timeline to trigger text)
-    function renderAutoPlay() {
-        requestAnimationFrame(renderAutoPlay);
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffd1dc, 0.001);
 
-        if (video.duration) {
-            // Calculate progress (0.0 at start, 1.0 at the end)
-            let progress = video.currentTime / video.duration;
-            if (progress > 1.0) progress = 1.0;
-            
-            updateHTMLUI(progress);
-        }
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const floatingSymbols = [];
+    // Changed to marine/nature elements to fit Organimo branding
+    const emojis = ['🐚', '🌿', '💧', '✨', '🫧'];
+
+    for(let i = 0; i < 60; i++) {
+        const emojiCanvas = document.createElement('canvas');
+        emojiCanvas.width = 128; emojiCanvas.height = 128;
+        const ctx = emojiCanvas.getContext('2d');
+        ctx.font = '72px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        
+        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+        ctx.fillText(randomEmoji, 64, 64);
+
+        const texture = new THREE.CanvasTexture(emojiCanvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85 });
+        const sprite = new THREE.Sprite(material);
+
+        sprite.position.set(
+            (Math.random() - 0.5) * 400, (Math.random() - 0.5) * 300, (Math.random() * -3000)
+        );
+        sprite.scale.set(15, 15, 1);
+        sprite.userData = { floatSpeed: Math.random() * 0.02 + 0.01, offset: Math.random() * Math.PI * 2 };
+
+        scene.add(sprite);
+        floatingSymbols.push(sprite);
     }
-    
-    // Start the loop
-    renderAutoPlay();
 
-    // --- 2. Text Overlay Timings ---
+    // --- 2. Auto-Animation Logic ---
+    let autoProgress = 0;   
+    let targetCameraZ = 0;
+    let isChatting = false;
+
+    // Corrected to include all 5 sections
     const sections = [
-        document.getElementById('sec-0'), document.getElementById('sec-1'),
-        document.getElementById('sec-2'), document.getElementById('sec-3')
+        document.getElementById('sec-0'), 
+        document.getElementById('sec-1'),
+        document.getElementById('sec-2'), 
+        document.getElementById('sec-3'),
+        document.getElementById('sec-4')
     ];
-    
-    // Adjust these numbers (0.0 to 1.0) to control WHEN the text appears during the video
-    // e.g., 0.50 means it happens exactly halfway through the video
+
+    // Corrected math to divide the 1.00 timeline cleanly across 5 sections
     const sectionTimings = [
-        { start: 0.00, peak: 0.10, hold: 0.15, end: 0.25 },
-        { start: 0.25, peak: 0.35, hold: 0.40, end: 0.50 },
-        { start: 0.50, peak: 0.60, hold: 0.65, end: 0.75 },
-        { start: 0.75, peak: 0.85, hold: 1.00, end: 1.00 } // Last section stays until button is clicked
+        { start: 0.00, peak: 0.04, hold: 0.16, end: 0.20 },
+        { start: 0.20, peak: 0.24, hold: 0.36, end: 0.40 },
+        { start: 0.40, peak: 0.44, hold: 0.56, end: 0.60 },
+        { start: 0.60, peak: 0.64, hold: 0.76, end: 0.80 },
+        { start: 0.80, peak: 0.85, hold: 1.00, end: 1.00 }
     ];
 
-    function updateHTMLUI(progress) {
+    function updateHTMLUI() {
+        if(isChatting) return;
+        
         sections.forEach((sec, index) => {
-            if(!sec) return;
             const t = sectionTimings[index];
-            let opacity = 0; 
-            let translateY = 50; // Starts pushed down slightly
+            let opacity = 0; let scale = 0.8;
 
-            if (progress >= t.start && progress <= t.end) {
-                if (progress < t.peak) {
-                    // Fading In & Floating Up
-                    const p = (progress - t.start) / (t.peak - t.start);
-                    opacity = p; 
-                    translateY = 50 - (p * 50); 
-                } else if (progress <= t.hold) {
-                    // Holding steady
-                    opacity = 1; 
-                    translateY = 0;
+            if (autoProgress >= t.start && autoProgress <= t.end) {
+                if (autoProgress < t.peak) {
+                    const p = (autoProgress - t.start) / (t.peak - t.start);
+                    opacity = p; scale = 0.8 + (p * 0.2);
+                } else if (autoProgress <= t.hold) {
+                    opacity = 1; scale = 1.0;
                 } else if (index !== sections.length - 1) { 
-                    // Fading Out & Floating Up further (except the final section)
-                    const p = (progress - t.hold) / (t.end - t.hold);
-                    opacity = 1 - p; 
-                    translateY = 0 - (p * 50); 
+                    const p = (autoProgress - t.hold) / (t.end - t.hold);
+                    opacity = 1 - (p * 1.5); if(opacity < 0) opacity = 0;
+                    scale = 1.0 + (p * 4.0); 
                 } else {
-                    opacity = 1; translateY = 0;
+                    opacity = 1; scale = 1;
                 }
-            } else if (index === sections.length - 1 && progress > t.end) {
-                // Keep the final section visible at the end of the video
-                opacity = 1; translateY = 0;
+            } else if (index === sections.length - 1 && autoProgress > t.end) {
+                opacity = 1; scale = 1;
             }
 
-            sec.style.opacity = Math.max(0, opacity);
-            sec.style.transform = `translateY(${translateY}px)`;
+            sec.style.opacity = opacity;
+            sec.style.transform = `scale(${scale})`;
             sec.style.pointerEvents = opacity > 0.8 ? 'auto' : 'none';
         });
     }
 
-    // --- 3. Chat Interface Logic ---
+    const clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = clock.getElapsedTime();
+        
+        if (!isChatting && autoProgress < 1.0) {
+            autoProgress += 0.001; 
+            if (autoProgress > 1.0) autoProgress = 1.0;
+            targetCameraZ = autoProgress * -3000;
+        }
+
+        camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+
+        floatingSymbols.forEach((symbol) => {
+            symbol.position.y += Math.sin(time * symbol.userData.floatSpeed + symbol.userData.offset) * 0.1;
+        });
+
+        updateHTMLUI();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- 3. Chatbot NLP & Navigation History Logic ---
     const sayHelloBtn = document.getElementById('say-hello-btn');
+    const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const farewellOverlay = document.getElementById('farewell-overlay');
 
-    if(sayHelloBtn) {
-        sayHelloBtn.addEventListener('click', () => {
-            history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
-            chatInterface.classList.remove('hidden'); 
-            
-            if(chatMessages.children.length === 0) {
-                setTimeout(() => appendMessage("bot", "Hi there. You made it to the bottom. I'm ready to listen. 💜"), 800);
-            }
-        });
-    }
+    // Entering Chat
+    sayHelloBtn.addEventListener('click', () => {
+        isChatting = true;
+        
+        history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
 
+        introSequence.style.display = 'none'; 
+        chatInterface.classList.remove('hidden'); 
+        
+        setTimeout(() => appendMessage("bot", "Hi! I'm Sara, your Organimo health guide. Do you have any questions about our marine ingredients or benefits? 🌿"), 800);
+    });
+
+    // Handle Back Button (Exiting Chat)
     window.addEventListener('popstate', (event) => {
-        if (!chatInterface.classList.contains('hidden')) {
+        if (isChatting) {
             handleExitChat();
         }
     });
 
     function handleExitChat() {
+        isChatting = false;
+        
         chatInterface.classList.add('hidden');
+        
         farewellOverlay.style.opacity = '1';
         farewellOverlay.style.pointerEvents = 'auto';
 
         setTimeout(() => {
             farewellOverlay.style.opacity = '0';
             farewellOverlay.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                introSequence.style.display = 'flex';
+                autoProgress = 1.0; 
+            }, 1000); 
+            
         }, 3000); 
     }
 
@@ -133,25 +192,24 @@ document.addEventListener("DOMContentLoaded", () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const systemPrompt = "You are Sara. You are a romantic, sweet, deeply empathetic, and completely non-judgmental listener.";
+            // Updated System Prompt to match the new brand
+            const systemPrompt = "You are Sara, a friendly and knowledgeable health guide for 'Organimo', a brand making natural marine-based multivitamins from Canada (featuring Sea Moss and Bladderwrack). Keep your responses brief, conversational, and helpful.";
             const fullPrompt = `${systemPrompt} The user says: "${text}"`;
+            
             const response = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}`);
             const aiText = await response.text();
 
-            const typingEl = document.getElementById(typingId);
-            if(typingEl) typingEl.remove();
+            document.getElementById(typingId).remove();
             appendMessage('bot', aiText);
         } catch (error) {
-            const typingEl = document.getElementById(typingId);
-            if(typingEl) typingEl.remove();
-            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here. 💜");
+            document.getElementById(typingId).remove();
+            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here to help with your wellness journey. 🌿");
         }
     }
 
-    if(sendBtn && chatInput) {
-        sendBtn.addEventListener('click', handleSend);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSend();
-        });
-    }
+    sendBtn.addEventListener('click', handleSend);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSend();
+    });
 });
+                
