@@ -1,47 +1,88 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Setup ---
+    // --- 1. Three.js Oceanic Setup ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffd1dc, 0.001);
+    
+    // Define our ocean colors (Surface vs Deep)
+    const surfaceColor = new THREE.Color(0x0077be);
+    const deepColor = new THREE.Color(0x000511);
+    
+    scene.background = surfaceColor;
+    scene.fog = new THREE.FogExp2(surfaceColor, 0.002);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    // Start slightly above 0
+    camera.position.set(0, 0, 500); 
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: false, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const floatingSymbols = [];
-    const emojis = ['❤️', '💋', '🫂', '💖', '💕'];
+    const floatingBubbles = [];
 
-    for(let i = 0; i < 60; i++) {
-        const emojiCanvas = document.createElement('canvas');
-        emojiCanvas.width = 128; emojiCanvas.height = 128;
-        const ctx = emojiCanvas.getContext('2d');
-        ctx.font = '72px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // Create a realistic bubble texture using Canvas API
+    const createBubbleTexture = () => {
+        const bubbleCanvas = document.createElement('canvas');
+        bubbleCanvas.width = 64; bubbleCanvas.height = 64;
+        const ctx = bubbleCanvas.getContext('2d');
         
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-        ctx.fillText(randomEmoji, 64, 64);
+        // Bubble outline
+        ctx.beginPath();
+        ctx.arc(32, 32, 28, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Inner faint fill
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.fill();
+        
+        // Specular highlight (reflection)
+        ctx.beginPath();
+        ctx.arc(22, 22, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fill();
 
-        const texture = new THREE.CanvasTexture(emojiCanvas);
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85 });
+        return new THREE.CanvasTexture(bubbleCanvas);
+    };
+
+    const bubbleTexture = createBubbleTexture();
+
+    // Generate Bubbles
+    for(let i = 0; i < 150; i++) {
+        const material = new THREE.SpriteMaterial({ map: bubbleTexture, transparent: true, blending: THREE.AdditiveBlending });
         const sprite = new THREE.Sprite(material);
 
+        // Randomize positions in a wide volume
         sprite.position.set(
-            (Math.random() - 0.5) * 400, (Math.random() - 0.5) * 300, (Math.random() * -3000)
+            (Math.random() - 0.5) * 1000, 
+            (Math.random() - 0.5) * -2500, // Spread them deep down
+            (Math.random() - 0.5) * 800
         );
-        sprite.scale.set(15, 15, 1);
-        sprite.userData = { floatSpeed: Math.random() * 0.02 + 0.01, offset: Math.random() * Math.PI * 2 };
+        
+        const scaleBase = Math.random() * 8 + 4;
+        sprite.scale.set(scaleBase, scaleBase, 1);
+        
+        // Custom data for bubble animation
+        sprite.userData = { 
+            floatSpeed: Math.random() * 1.5 + 0.5, 
+            wobbleSpeed: Math.random() * 0.02 + 0.01,
+            wobbleOffset: Math.random() * Math.PI * 2,
+            baseX: sprite.position.x
+        };
 
         scene.add(sprite);
-        floatingSymbols.push(sprite);
+        floatingBubbles.push(sprite);
     }
 
-    // --- 2. Auto-Animation Logic ---
+    // --- 2. Auto-Animation & Diving Logic ---
     let autoProgress = 0;   
-    let targetCameraZ = 0;
+    let targetCameraY = 0;
     let isChatting = false;
+    const maxDepth = -2500; // How deep the camera goes
 
     const sections = [
         document.getElementById('sec-0'), document.getElementById('sec-1'),
@@ -86,20 +127,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const clock = new THREE.Clock();
+    
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
+        // Progression algorithm
         if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.001; 
+            autoProgress += 0.0008; // Adjusted speed for a smooth dive
             if (autoProgress > 1.0) autoProgress = 1.0;
-            targetCameraZ = autoProgress * -3000;
+            targetCameraY = autoProgress * maxDepth;
         }
 
-        camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+        // Smoothly move camera down
+        camera.position.y += (targetCameraY - camera.position.y) * 0.03;
 
-        floatingSymbols.forEach((symbol) => {
-            symbol.position.y += Math.sin(time * symbol.userData.floatSpeed + symbol.userData.offset) * 0.1;
+        // Dynamic Environment Colors (Lerping from surface to deep ocean)
+        const currentColor = surfaceColor.clone().lerp(deepColor, autoProgress);
+        scene.background = currentColor;
+        scene.fog.color = currentColor;
+        scene.fog.density = 0.001 + (autoProgress * 0.002); // Fog gets thicker at depth
+
+        // Animate Bubbles
+        floatingBubbles.forEach((bubble) => {
+            // Rise up
+            bubble.position.y += bubble.userData.floatSpeed;
+            // Wobble side to side
+            bubble.position.x = bubble.userData.baseX + Math.sin(time * bubble.userData.wobbleSpeed + bubble.userData.wobbleOffset) * 20;
+
+            // Continuous loop: If a bubble goes too far above the camera, reset it deep below the camera
+            if (bubble.position.y > camera.position.y + 400) {
+                bubble.position.y = camera.position.y - 1000 - (Math.random() * 500);
+                bubble.position.x = bubble.userData.baseX = (Math.random() - 0.5) * 1000;
+            }
         });
 
         updateHTMLUI();
@@ -107,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     animate();
 
+    // Handle Window Resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -125,17 +186,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Entering Chat
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
-        
-        // Push state to browser history (Intercept Back Button)
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
 
         introSequence.style.display = 'none'; 
         chatInterface.classList.remove('hidden'); 
         
-        setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. I'm here to listen whenever you're ready. 💖"), 800);
+        // Empty previous messages if reopening
+        if(chatMessages.children.length === 0) {
+            setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. You're safe here. I'm ready to listen whenever you are. 🌊💙"), 800);
+        }
     });
 
-    // Handle Back Button (Exiting Chat)
+    // Safely exit chat without crashing
     window.addEventListener('popstate', (event) => {
         if (isChatting) {
             handleExitChat();
@@ -144,25 +206,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleExitChat() {
         isChatting = false;
-        
-        // Hide chat interface
         chatInterface.classList.add('hidden');
         
-        // Show farewell charming message
         farewellOverlay.style.opacity = '1';
         farewellOverlay.style.pointerEvents = 'auto';
 
-        // Wait 3 seconds, hide farewell, and return to Home Screen
         setTimeout(() => {
             farewellOverlay.style.opacity = '0';
             farewellOverlay.style.pointerEvents = 'none';
             
             setTimeout(() => {
                 introSequence.style.display = 'flex';
-                autoProgress = 1.0; // Ensure we are exactly at the "Say hello" screen
-            }, 1000); // Wait for fade out
+                // Lock progress at 1 to keep them at the deep ocean "Say Hello" screen smoothly
+                autoProgress = 1.0; 
+                updateHTMLUI();
+            }, 1000); 
             
-        }, 3000); // 3 seconds to read the message
+        }, 3000); 
     }
 
     function appendMessage(sender, text) {
@@ -199,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
             appendMessage('bot', aiText);
         } catch (error) {
             document.getElementById(typingId).remove();
-            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. ❤️");
+            appendMessage('bot', "I'm having a little trouble connecting right now, but I'm still here for you. 💙");
         }
     }
 
@@ -208,4 +268,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-    
+            
