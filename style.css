@@ -5,12 +5,23 @@
 ═══════════════════════════════════════════════ */
 
 :root {
+  /* Easing */
   --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);
+
+  /* Core Theme */
+  --bg-base:     #07090a;
   --green-dark:  #1e3820;
   --green-mid:   #2d5c30;
   --green-light: #4a8a50;
+  
+  /* RGB splits for easy rgba() usage */
+  --green-dark-rgb:  30, 56, 32;
+  --green-mid-rgb:   45, 92, 48;
+  --green-light-rgb: 74, 138, 80;
+
+  /* UI Text Colors */
   --cream:       rgba(255,255,255,0.92);
   --muted:       rgba(255,255,255,0.45);
   --dim:         rgba(255,255,255,0.22);
@@ -20,7 +31,7 @@
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html, body {
   width:100%; height:100%; overflow:hidden;
-  background:#07090a;
+  background:var(--bg-base);
   font-family:'Inter', sans-serif;
   -webkit-font-smoothing:antialiased;
   color:#fff;
@@ -38,7 +49,7 @@ html, body {
   border:1px solid rgba(255,255,255,0.32);
   transition:width .2s var(--ease-out), height .2s var(--ease-out), border-color .2s;
 }
-#c-ring.big { width:52px; height:52px; border-color:rgba(74,138,80,0.75); }
+#c-ring.big { width:52px; height:52px; border-color:rgba(var(--green-light-rgb),0.75); }
 
 /* ── NAV ── */
 #main-nav {
@@ -103,23 +114,16 @@ html, body {
 }
 #prog-fill {
   height:100%; width:0%;
-  background:linear-gradient(90deg,#2d5c30,#4a8a50);
-  box-shadow:0 0 8px rgba(74,138,80,.6);
+  background:linear-gradient(90deg,var(--green-mid),var(--green-light));
+  box-shadow:0 0 8px rgba(var(--green-light-rgb),.6);
   transition:width .4s linear;
 }
 
 /* ═══════════════════════════════════════════════
    WORD-REVEAL HEADLINE SYSTEM
-   Copied exactly from reference video:
-   — overflow:hidden on .wm clips each word
-   — word starts at translateY(105%) — invisible below mask
-   — animates to translateY(0) — slides into view
-   — NO other element shares the same space → ZERO OVERLAP
 ═══════════════════════════════════════════════ */
-
 .hl-stage {
   position:absolute; z-index:15; pointer-events:none;
-  /* Default: bottom-left, matching reference video scene 1 style */
   bottom:30%; left:6%;
 }
 .hl-stage.center-stage {
@@ -137,16 +141,14 @@ html, body {
 }
 .hl-line.center { justify-content:center; }
 
-/* The clip mask — this is the anti-overlap mechanism */
 .wm {
   display:inline-block;
-  overflow:hidden;           /* ← CLIP BOUNDARY — nothing leaks out */
+  overflow:hidden;
   vertical-align:bottom;
   line-height:1.18;
   padding-bottom:.04em;
 }
 
-/* Word starts BELOW clip, slides UP into view */
 .w {
   display:inline-block;
   font-family:'Playfair Display', serif;
@@ -158,21 +160,12 @@ html, body {
   text-shadow:0 2px 40px rgba(0,0,0,.4);
   transform:translateY(108%);
   will-change:transform, opacity;
-  /* NO CSS transition here — all driven by JS for precise timing */
 }
 .wm.italic .w { font-style:italic; color:rgba(240,218,195,.96); }
 .wm.large  .w { font-size:clamp(3.2rem, 7vw, 6.8rem); }
 
-/* When JS adds .revealed — word slides up */
-.w.up {
-  transform:translateY(0) !important;
-  opacity:1 !important;
-}
-/* When JS adds .exited — word slides up and out */
-.w.out {
-  transform:translateY(-110%) !important;
-  opacity:0 !important;
-}
+.w.up { transform:translateY(0) !important; opacity:1 !important; }
+.w.out { transform:translateY(-110%) !important; opacity:0 !important; }
 
 /* ═══════════════════════════════════════════════
    SARA HOME
@@ -183,8 +176,7 @@ html, body {
   flex-direction:column;
   align-items:center; justify-content:center;
   overflow:hidden;
-  background:radial-gradient(ellipse 100% 80% at 50% 115%,
-    #0d2010 0%, #080c0a 58%);
+  background:radial-gradient(ellipse 100% 80% at 50% 115%, #0d2010 0%, #080c0a 58%);
 }
 #home-canvas {
   position:absolute; inset:0; width:100%; height:100%;
@@ -198,12 +190,12 @@ html, body {
 }
 .o1 {
   width:520px; height:520px; top:-90px; left:-90px;
-  background:radial-gradient(circle,rgba(40,85,45,.32),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--green-mid-rgb),.32),transparent 70%);
   animation-delay:.1s;
 }
 .o2 {
   width:400px; height:400px; bottom:-70px; right:-70px;
-  background:radial-gradient(circle,rgba(75,130,82,.2),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--green-light-rgb),.2),transparent 70%);
   animation-delay:.3s;
 }
 .o3 {
@@ -238,19 +230,19 @@ html, body {
 #av-face {
   position:relative; z-index:2;
   width:82px; height:82px; border-radius:50%;
-  background:linear-gradient(145deg,#1e3820,#0e1c11);
+  background:linear-gradient(145deg,var(--green-dark),#0e1c11);
   border:1px solid rgba(255,255,255,.1);
   display:flex; align-items:center; justify-content:center;
   font-family:'Playfair Display',serif;
   font-size:1.9rem; color:rgba(175,215,168,.9);
   box-shadow:0 0 0 1px rgba(255,255,255,.04),
              0 8px 32px rgba(0,0,0,.4),
-             0 0 40px rgba(40,85,45,.22);
+             0 0 40px rgba(var(--green-mid-rgb),.22);
   animation:avGlow 4s ease-in-out infinite;
 }
 @keyframes avGlow {
-  0%,100%{ box-shadow:0 0 0 1px rgba(255,255,255,.04),0 8px 32px rgba(0,0,0,.4),0 0 28px rgba(40,85,45,.15); }
-  50%    { box-shadow:0 0 0 1px rgba(255,255,255,.07),0 8px 32px rgba(0,0,0,.4),0 0 55px rgba(75,130,82,.32); }
+  0%,100%{ box-shadow:0 0 0 1px rgba(255,255,255,.04),0 8px 32px rgba(0,0,0,.4),0 0 28px rgba(var(--green-mid-rgb),.15); }
+  50%    { box-shadow:0 0 0 1px rgba(255,255,255,.07),0 8px 32px rgba(0,0,0,.4),0 0 55px rgba(var(--green-light-rgb),.32); }
 }
 #av-dot {
   position:absolute; bottom:9px; right:9px; z-index:3;
@@ -293,10 +285,10 @@ html, body {
   display:inline-flex; align-items:center; gap:10px;
   font-family:'Inter',sans-serif; font-size:.82rem;
   font-weight:400; letter-spacing:.5px; color:#fff;
-  background:linear-gradient(135deg,#1e3820,#2d5c30);
+  background:linear-gradient(135deg,var(--green-dark),var(--green-mid));
   border:none; border-radius:50px; padding:14px 30px;
   cursor:none; position:relative; overflow:hidden;
-  box-shadow:0 4px 24px rgba(30,56,32,.45),
+  box-shadow:0 4px 24px rgba(var(--green-dark-rgb),.45),
              inset 0 1px 0 rgba(255,255,255,.12);
   transition:transform .28s var(--ease-spring), box-shadow .28s;
   margin-bottom:1.2rem;
@@ -308,7 +300,7 @@ html, body {
 }
 #say-hello-btn:hover {
   transform:scale(1.05) translateY(-2px);
-  box-shadow:0 8px 36px rgba(30,56,32,.6),
+  box-shadow:0 8px 36px rgba(var(--green-dark-rgb),.6),
              inset 0 1px 0 rgba(255,255,255,.18);
 }
 #say-hello-btn:hover::before { transform:translateX(100%); }
@@ -320,34 +312,12 @@ html, body {
 
 /* ═══════════════════════════════════════════════
    PHASE STATES
-   Rules are ordered so later classes win.
-   phase-off  → hidden (display:none)
-   phase-in   → flex + fade-in animation (stays visible after anim)
-   phase-flex → flex, no animation (instant show)
 ═══════════════════════════════════════════════ */
-.phase-off {
-  display:none !important;
-  opacity:0 !important;
-  pointer-events:none !important;
-}
-/* phase-in: display:flex persists because it's a class, not an animation fill */
-.phase-in {
-  display:flex !important;
-  opacity:1;
-  animation:phaseReveal .9s var(--ease-out) both;
-}
-.phase-flex {
-  display:flex !important;
-  opacity:1;
-}
+.phase-off { display:none !important; opacity:0 !important; pointer-events:none !important; }
+.phase-in { display:flex !important; opacity:1; animation:phaseReveal .9s var(--ease-out) both; }
+.phase-flex { display:flex !important; opacity:1; }
 @keyframes phaseReveal { from{opacity:0;} to{opacity:1;} }
-
-/* Intro wrap hidden state — separate from phase system */
-#intro-wrap.intro-done {
-  opacity:0 !important;
-  pointer-events:none !important;
-  /* keep display:block so WebGL canvas keeps rendering (needed for BG) */
-}
+#intro-wrap.intro-done { opacity:0 !important; pointer-events:none !important; }
 
 /* ═══════════════════════════════════════════════
    CHAT
@@ -357,8 +327,7 @@ html, body {
   display:none;
   align-items:center; justify-content:center;
   padding:clamp(0px,2vw,20px); overflow:hidden;
-  background:radial-gradient(ellipse 130% 85% at 50% 115%,
-    #0a1e0d 0%, #07090a 55%);
+  background:radial-gradient(ellipse 130% 85% at 50% 115%, #0a1e0d 0%, var(--bg-base) 55%);
 }
 #chat-canvas {
   position:absolute; inset:0; width:100%; height:100%;
@@ -369,11 +338,11 @@ html, body {
 }
 #chat-orb1 {
   width:480px; height:480px; top:-90px; left:-140px;
-  background:radial-gradient(circle,rgba(40,85,45,.26),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--green-mid-rgb),.26),transparent 70%);
 }
 #chat-orb2 {
   width:360px; height:360px; bottom:-75px; right:-95px;
-  background:radial-gradient(circle,rgba(75,130,82,.2),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--green-light-rgb),.2),transparent 70%);
 }
 #chat-trees {
   position:absolute; bottom:0; left:0; right:0;
@@ -419,12 +388,12 @@ html, body {
 }
 #chat-hdr::after {
   content:''; position:absolute; bottom:0; left:19px; right:19px; height:1px;
-  background:linear-gradient(90deg,transparent,rgba(75,130,82,.3),transparent);
+  background:linear-gradient(90deg,transparent,rgba(var(--green-light-rgb),.3),transparent);
 }
 #hdr-av-w { position:relative; flex-shrink:0; }
 #hdr-av {
   width:43px; height:43px; border-radius:50%;
-  background:linear-gradient(145deg,#1e3820,#0e1c11);
+  background:linear-gradient(145deg,var(--green-dark),#0e1c11);
   border:1px solid rgba(255,255,255,.09);
   display:flex; align-items:center; justify-content:center;
   font-family:'Playfair Display',serif;
@@ -434,7 +403,7 @@ html, body {
 #hdr-dot {
   position:absolute; bottom:1px; right:1px;
   width:11px; height:11px; border-radius:50%;
-  background:#4ade80; border:2px solid #07090a;
+  background:#4ade80; border:2px solid var(--bg-base);
   animation:pulseRing 2.5s ease-in-out infinite;
 }
 #hdr-info { flex:1; min-width:0; }
@@ -502,11 +471,11 @@ html, body {
 }
 .msg.user {
   align-self:flex-end;
-  background:linear-gradient(135deg,#1e3820,#2a5028);
+  background:linear-gradient(135deg,var(--green-dark),var(--green-mid));
   border:1px solid rgba(255,255,255,.055);
   color:rgba(255,255,255,.9);
   border-radius:16px 16px 4px 16px;
-  box-shadow:0 3px 14px rgba(25,56,28,.4);
+  box-shadow:0 3px 14px rgba(var(--green-dark-rgb),.4);
 }
 .msg-ts {
   display:block; font-size:.55rem;
@@ -541,9 +510,9 @@ html, body {
 #vwave.on { height:40px; opacity:1; }
 .vb {
   width:3px; border-radius:3px; flex-shrink:0;
-  background:linear-gradient(to top,#2d5c30,#6aaa70);
+  background:linear-gradient(to top,var(--green-mid),var(--green-light));
   animation:vbWave 1.1s ease-in-out infinite;
-  box-shadow:0 0 5px rgba(75,130,82,.5);
+  box-shadow:0 0 5px rgba(var(--green-light-rgb),.5);
 }
 .vb:nth-child(1){height:5px; animation-delay:0s;}
 .vb:nth-child(2){height:11px;animation-delay:.07s;}
@@ -590,7 +559,7 @@ html, body {
 }
 #input-row::before {
   content:''; position:absolute; top:0; left:13px; right:13px; height:1px;
-  background:linear-gradient(90deg,transparent,rgba(75,130,82,.2),transparent);
+  background:linear-gradient(90deg,transparent,rgba(var(--green-light-rgb),.2),transparent);
 }
 #chat-in {
   flex:1; background:rgba(255,255,255,.04);
@@ -605,15 +574,15 @@ html, body {
 }
 #chat-in::placeholder { color:rgba(255,255,255,.2); }
 #chat-in:focus {
-  border-color:rgba(75,130,82,.45);
-  box-shadow:0 0 0 3px rgba(75,130,82,.1);
+  border-color:rgba(var(--green-light-rgb),.45);
+  box-shadow:0 0 0 3px rgba(var(--green-light-rgb),.1);
 }
 #send-btn {
   width:44px; height:44px; border-radius:50%; flex-shrink:0;
-  background:linear-gradient(135deg,#1e3820,#2d5c30);
+  background:linear-gradient(135deg,var(--green-dark),var(--green-mid));
   border:none; color:#fff; cursor:none;
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 16px rgba(30,56,32,.45);
+  box-shadow:0 4px 16px rgba(var(--green-dark-rgb),.45);
   transition:transform .24s var(--ease-spring), box-shadow .24s, opacity .24s;
   position:relative; overflow:hidden;
 }
@@ -623,7 +592,7 @@ html, body {
 }
 #send-btn:not(:disabled):hover {
   transform:scale(1.1) rotate(-8deg);
-  box-shadow:0 6px 22px rgba(30,56,32,.6);
+  box-shadow:0 6px 22px rgba(var(--green-dark-rgb),.6);
 }
 #send-btn:not(:disabled):active { transform:scale(.9); }
 #send-btn:disabled { opacity:.3; cursor:not-allowed; }
@@ -677,4 +646,4 @@ html, body {
   #chat-wrap { padding:0; }
   #chat-win  { border-radius:0; height:100dvh; border:none; }
   #hdr-mood  { display:none; }
-}
+   }
