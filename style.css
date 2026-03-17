@@ -5,27 +5,27 @@ body, html {
     background-color: #000;
     font-family: 'Playfair Display', serif;
     color: #ffffff;
-    /* Allow vertical scrolling, hide horizontal */
-    overflow-x: hidden;
-    overflow-y: auto; 
-    scroll-behavior: smooth;
+    overflow: hidden; /* Locks the screen, no scrollbars allowed */
 }
 
-/* This forces the page to have scrollable height (5 screens tall) */
-#scroll-track {
-    position: absolute;
+/* Video Background Setup */
+#video-container {
+    position: fixed;
     top: 0; left: 0;
-    width: 100%;
-    height: 500vh; 
-    z-index: 0;
-}
-
-#webgl-canvas {
-    position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh;
-    z-index: 1; pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    background: #000;
 }
 
+#bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the video fills the screen perfectly */
+    opacity: 0.85; /* Slightly dims the video so text pops */
+}
+
+/* UI Positioning */
 .ui-container {
     position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh;
@@ -35,93 +35,60 @@ body, html {
 
 .text-section {
     position: absolute; text-align: center;
-    opacity: 0; transform: scale(0.8);
+    opacity: 0; transform: translateY(50px);
     will-change: opacity, transform;
-    text-shadow: 0px 4px 20px rgba(0,0,0,0.6);
+    text-shadow: 0px 4px 15px rgba(0,0,0,0.8);
 }
 
-h1 { font-size: 3.8rem; line-height: 1.2; color: #ffffff; font-weight: 400; }
-h1 em { color: #fbb4b4; font-style: italic; }
+h1 { font-size: 3.5rem; line-height: 1.2; color: #ffffff; font-weight: 400; }
+h1 em { color: #fbb4b4; font-style: italic; font-weight: 600; }
 
-.subtitle {
-    font-family: 'Inter', sans-serif; font-size: 0.9rem; letter-spacing: 2px;
-    color: #fbb4b4; margin-bottom: 1rem; text-transform: uppercase;
-}
-
-.description {
-    font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #e2d1f0;
-    margin-top: 1.5rem; margin-bottom: 2.5rem;
-}
+.subtitle { font-family: 'Inter', sans-serif; font-size: 0.9rem; letter-spacing: 2px; color: #fff; margin-bottom: 1rem; text-transform: uppercase; }
+.description { font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #eee; margin-top: 1.5rem; margin-bottom: 2.5rem; }
 
 .chat-btn {
-    font-family: 'Inter', sans-serif; background-color: rgba(255,255,255,0.15); 
-    color: #fff; border: 1px solid rgba(255,255,255,0.4); 
-    backdrop-filter: blur(8px); padding: 1rem 3rem; font-size: 1rem;
+    font-family: 'Inter', sans-serif; background-color: rgba(255,255,255,0.2); 
+    color: #fff; border: 1px solid rgba(255,255,255,0.5); 
+    backdrop-filter: blur(10px); padding: 1rem 3rem; font-size: 1rem;
     border-radius: 50px; cursor: pointer; pointer-events: auto;
     transition: all 0.3s ease;
 }
-.chat-btn:hover { 
-    background-color: rgba(255,255,255,0.3); 
-    border-color: #fff;
-    transform: scale(1.05); 
-}
+.chat-btn:hover { background-color: rgba(255,255,255,0.4); border-color: #fff; transform: scale(1.05); }
 
-/* --- Chat Interface --- */
+/* Chat Interface Styling */
 .hidden { display: none !important; }
 
 #chat-interface {
     position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh; z-index: 10;
     display: flex; justify-content: center; align-items: center;
-    background: rgba(34, 11, 52, 0.7); backdrop-filter: blur(15px);
-    opacity: 0; animation: fadeIn 0.8s forwards;
+    background: rgba(15, 4, 25, 0.85); backdrop-filter: blur(20px);
+    opacity: 0; animation: fadeIn 0.5s forwards;
 }
 
 @keyframes fadeIn { to { opacity: 1; } }
 
 .chat-window {
     width: 90%; max-width: 450px; height: 80vh;
-    background: rgba(255, 255, 255, 0.95); border-radius: 24px;
+    background: #fff; border-radius: 24px;
     box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     display: flex; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif;
-    color: #333;
 }
 
-.chat-header {
-    display: flex; align-items: center; padding: 20px; 
-    background: #fff; border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.avatar {
-    width: 45px; height: 45px; background: linear-gradient(135deg, #8e54e9, #4776E6);
-    border-radius: 50%; display: flex; justify-content: center; align-items: center;
-    color: #fff; font-weight: 600; font-size: 1.2rem; margin-right: 15px;
-}
-
+.chat-header { display: flex; align-items: center; padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.avatar { width: 45px; height: 45px; background: linear-gradient(135deg, #8e54e9, #4776E6); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: 600; font-size: 1.2rem; margin-right: 15px; }
 .header-info h2 { font-size: 1.2rem; margin: 0; color: #222; font-family: 'Playfair Display', serif; }
 .header-info p { font-size: 0.8rem; color: #666; margin: 0; }
 
-.chat-messages {
-    flex: 1; padding: 20px; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 15px; background: #fdfbfd;
-}
-
+.chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fdfbfd; }
 .message { max-width: 80%; padding: 12px 18px; border-radius: 20px; font-size: 0.95rem; line-height: 1.4; animation: popIn 0.3s ease-out; }
-
-@keyframes popIn {
-    0% { opacity: 0; transform: translateY(10px) scale(0.95); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
+@keyframes popIn { 0% { opacity: 0; transform: translateY(10px) scale(0.95); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 .message.bot { background: #eeeaf3; color: #333; border-bottom-left-radius: 5px; align-self: flex-start; }
 .message.user { background: #6a2a88; color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
 
 .typing-dots { display: flex; align-items: center; gap: 5px; padding: 4px 2px; }
 .typing-dots span { width: 6px; height: 6px; background-color: #888; border-radius: 50%; animation: blink 1.4s infinite both; }
-.typing-dots span:nth-child(1) { animation-delay: 0s; }
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
+.typing-dots span:nth-child(1) { animation-delay: 0s; } .typing-dots span:nth-child(2) { animation-delay: 0.2s; } .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.2); } }
 
 .chat-input-area { display: flex; padding: 15px; background: #fff; border-top: 1px solid rgba(0,0,0,0.05); }
@@ -129,14 +96,11 @@ h1 em { color: #fbb4b4; font-style: italic; }
 #send-btn { background: #8e54e9; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.2s; }
 #send-btn:hover { transform: scale(1.1); }
 
-/* --- Farewell Overlay --- */
 #farewell-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(15, 4, 25, 0.95); 
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px);
     display: flex; justify-content: center; align-items: center;
-    z-index: 20; opacity: 0; pointer-events: none;
-    transition: opacity 1s ease;
+    z-index: 20; opacity: 0; pointer-events: none; transition: opacity 1s ease;
 }
 #farewell-overlay h2 { font-size: 2.2rem; color: #ffffff; font-weight: 400; text-align: center; line-height: 1.4; }
 #farewell-overlay em { color: #fbb4b4; font-style: italic; }
