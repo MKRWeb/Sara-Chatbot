@@ -12,13 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- 2. Create Floating Romantic Symbols (Love, Kiss, Hug) ---
+    // --- 2. Create Floating Romantic Symbols ---
     const floatingSymbols = [];
     const emojis = ['❤️', '💋', '🫂', '💖', '💕'];
 
-    // Generate 60 floating emojis in the 3D space
     for(let i = 0; i < 60; i++) {
-        // Draw emoji on an invisible canvas to use as a 3D texture
         const emojiCanvas = document.createElement('canvas');
         emojiCanvas.width = 128; 
         emojiCanvas.height = 128;
@@ -27,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Pick a random romantic emoji
         const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
         ctx.fillText(randomEmoji, 64, 64);
 
@@ -35,11 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85 });
         const sprite = new THREE.Sprite(material);
 
-        // Scatter them deep along the camera's path (Z-axis)
         sprite.position.set(
-            (Math.random() - 0.5) * 400, // X: left to right
-            (Math.random() - 0.5) * 300, // Y: up and down
-            (Math.random() * -3000)      // Z: depth into the screen
+            (Math.random() - 0.5) * 400,
+            (Math.random() - 0.5) * 300,
+            (Math.random() * -3000)
         );
         
         sprite.scale.set(15, 15, 1);
@@ -53,8 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
         floatingSymbols.push(sprite);
     }
 
-    // --- 3. Auto-Animation Logic ---
-    let autoProgress = 0;   // Goes from 0.0 to 1.0
+    // --- 3. Auto-Animation Logic with Reading Pauses ---
+    let autoProgress = 0;   
     let targetCameraZ = 0;
     let isChatting = false;
 
@@ -63,37 +59,45 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('sec-2'), document.getElementById('sec-3')
     ];
 
-    // Timings for when each sentence appears and fades out (based on 0 to 1 progress)
+    // Added a "hold" phase. It fades in until "peak", stays entirely static until "hold", then flies past.
     const sectionTimings = [
-        { start: 0.05, peak: 0.15, end: 0.25 },
-        { start: 0.30, peak: 0.40, end: 0.50 },
-        { start: 0.55, peak: 0.65, end: 0.75 },
-        { start: 0.80, peak: 0.95, end: 1.00 } // Final screen stays
+        { start: 0.00, peak: 0.05, hold: 0.18, end: 0.25 },
+        { start: 0.25, peak: 0.30, hold: 0.43, end: 0.50 },
+        { start: 0.50, peak: 0.55, hold: 0.68, end: 0.75 },
+        { start: 0.75, peak: 0.85, hold: 1.00, end: 1.00 } // Final screen stays
     ];
 
     function updateHTMLUI() {
         if(isChatting) return;
         
         sections.forEach((sec, index) => {
-            const timing = sectionTimings[index];
+            const t = sectionTimings[index];
             let opacity = 0;
-            let scale = 0.5;
+            let scale = 0.8;
 
-            if (autoProgress >= timing.start && autoProgress <= timing.end) {
-                if (autoProgress <= timing.peak) {
-                    // Entering dimension: Fades in and scales to normal
-                    const progress = (autoProgress - timing.start) / (timing.peak - timing.start);
-                    opacity = progress;
-                    scale = 0.5 + (progress * 0.5); 
-                } else if (index !== sections.length - 1) { 
-                    // Exiting dimension: Flies past you, scaling up massively
-                    const progress = (autoProgress - timing.peak) / (timing.end - timing.peak);
-                    opacity = 1 - progress;
-                    scale = 1.0 + (progress * 4.0); 
-                } else {
+            if (autoProgress >= t.start && autoProgress <= t.end) {
+                if (autoProgress < t.peak) {
+                    // 1. Fading in and settling into place
+                    const p = (autoProgress - t.start) / (t.peak - t.start);
+                    opacity = p;
+                    scale = 0.8 + (p * 0.2); // scales 0.8 to 1.0
+                } 
+                else if (autoProgress <= t.hold) {
+                    // 2. STATIC READING TIME - perfectly still
+                    opacity = 1;
+                    scale = 1.0;
+                } 
+                else if (index !== sections.length - 1) { 
+                    // 3. Zooming past into the next dimension
+                    const p = (autoProgress - t.hold) / (t.end - t.hold);
+                    opacity = 1 - (p * 1.5); // Fades out smoothly
+                    if(opacity < 0) opacity = 0;
+                    scale = 1.0 + (p * 4.0); // Scales up massively 
+                } 
+                else {
                     opacity = 1; scale = 1;
                 }
-            } else if (index === sections.length - 1 && autoProgress > timing.end) {
+            } else if (index === sections.length - 1 && autoProgress > t.end) {
                 opacity = 1; scale = 1;
             }
 
@@ -110,17 +114,15 @@ document.addEventListener("DOMContentLoaded", () => {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        // Slowly increment the progress to make it auto-play (takes ~12 seconds)
+        // Slower increment for a relaxed ~16-18 second cinematic experience
         if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.0012; 
+            autoProgress += 0.001; 
             if (autoProgress > 1.0) autoProgress = 1.0;
             targetCameraZ = autoProgress * -3000;
         }
 
-        // Move camera forward
         camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
 
-        // Make the romantic symbols bob up and down gently
         floatingSymbols.forEach((symbol) => {
             symbol.position.y += Math.sin(time * symbol.userData.floatSpeed + symbol.userData.offset) * 0.1;
         });
@@ -144,7 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
 
-    // Enter Chat Mode
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
         introSequence.style.display = 'none'; 
@@ -168,11 +169,12 @@ document.addEventListener("DOMContentLoaded", () => {
         appendMessage('user', text);
         chatInput.value = '';
         
+        // Show Animated Typing Dots
         const typingId = "typing-" + Date.now();
         const typingDiv = document.createElement('div');
         typingDiv.classList.add('message', 'bot');
         typingDiv.id = typingId;
-        typingDiv.textContent = "...";
+        typingDiv.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
         chatMessages.appendChild(typingDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -196,4 +198,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                                   
+            
