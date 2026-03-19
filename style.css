@@ -1,12 +1,12 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body, html {
-    /* Deep Black-Blue background gradient */
-    background: linear-gradient(-45deg, #0b0f19, #161124, #141a29, #05080f);
+    /* Eye-Care Sky Blue: Deep twilight and slate blues to reduce harsh glare */
+    background: linear-gradient(-45deg, #1c3144, #2c4c6b, #213c54, #142433);
     background-size: 400% 400%;
     animation: gradientFlow 15s ease infinite;
     font-family: 'Playfair Display', serif;
-    color: #e6f0f9; 
+    color: #e6f0f9; /* Soft ice-blue text instead of harsh white */
     overflow: hidden; 
 }
 
@@ -37,34 +37,35 @@ body, html {
 }
 
 h1 { font-size: 3.5rem; line-height: 1.2; color: #e6f0f9; font-weight: 400; }
-h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
+h1 em { color: #76b3e8; font-style: italic; } /* Soft sky blue */
 
 .subtitle {
     font-family: 'Inter', sans-serif; font-size: 0.9rem; letter-spacing: 2px;
-    color: #d484e1; margin-bottom: 1rem; text-transform: uppercase;
+    color: #76b3e8; margin-bottom: 1rem; text-transform: uppercase;
 }
 
 .description {
-    font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #e6c8ee;
+    font-family: 'Inter', sans-serif; font-size: 1.1rem; color: #a9cceb;
     margin-top: 1.5rem; margin-bottom: 2.5rem;
 }
 
 .chat-btn {
-    font-family: 'Inter', sans-serif; background-color: #9b5de5; color: #ffffff;
+    font-family: 'Inter', sans-serif; background-color: #4a82b5; color: #ffffff;
     border: none; padding: 1rem 2.5rem; font-size: 1rem; font-weight: 500;
     border-radius: 50px; cursor: pointer; pointer-events: auto;
     transition: transform 0.3s ease, background-color 0.3s;
     box-shadow: 0 10px 20px rgba(0,0,0,0.4);
 }
-.chat-btn:hover { background-color: #b97af5; transform: scale(1.05); }
+.chat-btn:hover { background-color: #5c98ce; transform: scale(1.05); }
 
 .hidden { display: none !important; }
 
+/* --- Eye-Care Twilight Chat Interface --- */
 #chat-interface {
     position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh; z-index: 10;
     display: flex; justify-content: center; align-items: center;
-    background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px);
+    background: rgba(14, 25, 36, 0.75); backdrop-filter: blur(8px);
     opacity: 0; animation: fadeIn 1s forwards;
 }
 
@@ -72,25 +73,25 @@ h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
 
 .chat-window {
     width: 90%; max-width: 450px; height: 80vh;
-    background: rgba(16, 18, 27, 0.95); /* Deep Black-Blue */
-    border-radius: 24px; border: 1px solid rgba(212, 132, 225, 0.15);
+    background: rgba(28, 49, 68, 0.95); /* Slate blue */
+    border-radius: 24px; border: 1px solid rgba(118, 179, 232, 0.15);
     box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     display: flex; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif;
 }
 
 .chat-header {
     display: flex; align-items: center; padding: 20px; 
-    background: rgba(22, 20, 35, 0.9); border-bottom: 1px solid rgba(0,0,0,0.3);
+    background: rgba(35, 62, 87, 0.9); border-bottom: 1px solid rgba(0,0,0,0.3);
 }
 
 .avatar {
-    width: 45px; height: 45px; background: linear-gradient(135deg, #9b5de5, #ffb3f6);
+    width: 45px; height: 45px; background: linear-gradient(135deg, #76b3e8, #a8d0f0);
     border-radius: 50%; display: flex; justify-content: center; align-items: center;
     color: #0f1c26; font-weight: 600; font-size: 1.2rem; margin-right: 15px;
 }
 
 .header-info h2 { font-size: 1.2rem; margin: 0; color: #e6f0f9; font-family: 'Playfair Display', serif; }
-.header-info p { font-size: 0.8rem; color: #c4a1d4; margin: 0; }
+.header-info p { font-size: 0.8rem; color: #8cb6d9; margin: 0; }
 
 .chat-messages {
     flex: 1; padding: 20px; overflow-y: auto;
@@ -104,11 +105,11 @@ h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.message.bot { background: #1b1f33; color: #e6f0f9; border-bottom-left-radius: 5px; align-self: flex-start; }
-.message.user { background: #9b5de5; color: #ffffff; border-bottom-right-radius: 5px; align-self: flex-end; }
+.message.bot { background: #233e57; color: #e6f0f9; border-bottom-left-radius: 5px; align-self: flex-start; }
+.message.user { background: #4a82b5; color: #ffffff; border-bottom-right-radius: 5px; align-self: flex-end; }
 
 .typing-dots { display: flex; align-items: center; gap: 5px; padding: 4px 2px; }
-.typing-dots span { width: 6px; height: 6px; background-color: #d484e1; border-radius: 50%; animation: blink 1.4s infinite both; }
+.typing-dots span { width: 6px; height: 6px; background-color: #76b3e8; border-radius: 50%; animation: blink 1.4s infinite both; }
 .typing-dots span:nth-child(1) { animation-delay: 0s; }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -119,17 +120,17 @@ h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
 }
 
 .chat-input-area {
-    display: flex; padding: 15px; background: #0b0f19; border-top: 1px solid rgba(0,0,0,0.3);
+    display: flex; padding: 15px; background: #1c3144; border-top: 1px solid rgba(0,0,0,0.3);
 }
 
 #chat-input {
-    flex: 1; border: none; background: #1b1f33; color: #e6f0f9;
+    flex: 1; border: none; background: #233e57; color: #e6f0f9;
     padding: 15px 20px; border-radius: 30px; font-size: 1rem; outline: none; font-family: 'Inter', sans-serif;
 }
-#chat-input::placeholder { color: #8a7b9c; }
+#chat-input::placeholder { color: #7a9cb8; }
 
 #send-btn {
-    background: #9b5de5; color: #ffffff; border: none; width: 50px; height: 50px;
+    background: #4a82b5; color: #ffffff; border: none; width: 50px; height: 50px;
     border-radius: 50%; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center;
     transition: transform 0.2s;
 }
@@ -137,7 +138,7 @@ h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
 
 #farewell-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(11, 15, 25, 0.98);
+    background: rgba(20, 36, 51, 0.98);
     backdrop-filter: blur(10px);
     display: flex; justify-content: center; align-items: center;
     z-index: 20; opacity: 0; pointer-events: none;
@@ -147,7 +148,7 @@ h1 em { color: #d484e1; font-style: italic; } /* Mixed Purple Pink */
     font-size: 2.2rem; color: #e6f0f9; font-weight: 400; text-align: center;
     line-height: 1.4; animation: popIn 1s ease;
 }
-#farewell-overlay em { color: #d484e1; font-style: italic; }
+#farewell-overlay em { color: #76b3e8; font-style: italic; }
 
 @media (max-width: 768px) { h1 { font-size: 2.2rem; } #farewell-overlay h2 { font-size: 1.8rem; padding: 20px; } }
     
