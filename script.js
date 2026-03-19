@@ -1,116 +1,158 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Setup & Floral Gates ---
+    // --- 1. Three.js Setup & Ancient Wooden Windows ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    // Soft romantic fog
-    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0008); 
+    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0006); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Helper: Generate Emoji Textures for Flowers
-    function createEmojiTexture(emoji, size = 128) {
-        const c = document.createElement('canvas');
-        c.width = size; c.height = size;
-        const ctx = c.getContext('2d');
-        ctx.font = `${size * 0.75}px serif`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(emoji, size / 2, size / 2);
-        return new THREE.CanvasTexture(c);
-    }
+    // Realistic Lighting setup
+    const ambientLight = new THREE.AmbientLight(0xfff0dd, 0.7); // Warmer ambient light
+    scene.add(ambientLight);
 
-    const flowerEmojis = ['🌸', '🌺', '🌷', '🌼'];
-    const flowerTextures = flowerEmojis.map(e => createEmojiTexture(e));
+    const dirLight = new THREE.DirectionalLight(0xffe8c4, 1.8); // Warm, golden sunlight
+    dirLight.position.set(500, 600, 500);
+    scene.add(dirLight);
 
-    // Create a 3D Gate decorated with flowers
-    const gates = [];
-    function buildFloralGate(zPos, triggerTime) {
-        const gateGroup = new THREE.Group();
-        gateGroup.position.z = zPos;
+    // --- Ancient Materials ---
+    // Aged, rough dark wood
+    const woodMat = new THREE.MeshStandardMaterial({ 
+        color: 0x4a3424, // Deep weathered brown
+        roughness: 0.95, 
+        metalness: 0.0 
+    });
 
-        const doorWidth = 350;
-        const doorHeight = 600;
+    // Imperfect, slightly frosted ancient glass
+    const ancientGlassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xfdfbf7, // Slightly milky/dusty tint
+        metalness: 0.1,
+        roughness: 0.25, // Not perfectly smooth
+        transmission: 0.65, // Less clear than modern glass
+        opacity: 1,
+        transparent: true,
+        ior: 1.55, 
+        side: THREE.DoubleSide
+    });
 
-        // FIXED: Changed to the deep pink accent color so it's highly visible!
-        const doorMat = new THREE.MeshBasicMaterial({ 
-            color: 0xd1497b, 
-            transparent: true, 
-            opacity: 0.85,
-            side: THREE.DoubleSide
-        });
+    const windowsArray = [];
 
-        // --- Left Door ---
-        const leftHinge = new THREE.Group();
-        leftHinge.position.set(-doorWidth, 0, 0); 
+    // Function to build a classic ancient window with multiple panes
+    function buildAncientWindow(zPos, triggerTime) {
+        const windowGroup = new THREE.Group();
+        windowGroup.position.z = zPos;
 
-        const leftDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
-        leftDoor.position.set(doorWidth / 2, 0, 0); 
-        leftHinge.add(leftDoor);
+        const width = 480;
+        const height = 700;
+        const frameThick = 25; // Thicker, heavier wood
+        const frameDepth = 35;
 
-        // --- Right Door ---
-        const rightHinge = new THREE.Group();
-        rightHinge.position.set(doorWidth, 0, 0); 
+        // --- 1. Outer Heavy Wooden Frame ---
+        const outerFrame = new THREE.Group();
+        
+        const topOuter = new THREE.Mesh(new THREE.BoxGeometry(width + frameThick*2, frameThick, frameDepth), woodMat);
+        topOuter.position.y = height / 2 + frameThick / 2;
+        
+        const botOuter = new THREE.Mesh(new THREE.BoxGeometry(width + frameThick*2, frameThick, frameDepth), woodMat);
+        botOuter.position.y = -height / 2 - frameThick / 2;
+        
+        const leftOuter = new THREE.Mesh(new THREE.BoxGeometry(frameThick, height, frameDepth), woodMat);
+        leftOuter.position.x = -width / 2 - frameThick / 2;
+        
+        const rightOuter = new THREE.Mesh(new THREE.BoxGeometry(frameThick, height, frameDepth), woodMat);
+        rightOuter.position.x = width / 2 + frameThick / 2;
 
-        const rightDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
-        rightDoor.position.set(-doorWidth / 2, 0, 0); 
-        rightHinge.add(rightDoor);
+        outerFrame.add(topOuter, botOuter, leftOuter, rightOuter);
+        windowGroup.add(outerFrame);
 
-        // FIXED: Use PlaneGeometry so the flowers rotate perfectly flat with the doors
-        for (let i = 0; i < 20; i++) {
-            const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
-            const flowerMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
-            const flowerGeo = new THREE.PlaneGeometry(60, 60);
+        const paneWidth = width / 2;
+
+        // Helper function to create a door with classic crossbars (muntins)
+        function createDoorGroup(isLeft) {
+            const doorGroup = new THREE.Group();
+            const direction = isLeft ? 1 : -1;
             
-            // Left door decorations
-            const meshL = new THREE.Mesh(flowerGeo, flowerMat);
-            meshL.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
-            leftDoor.add(meshL);
+            // Outer frame of the swinging door
+            const innerThick = 15;
+            const doorBorder = new THREE.Group();
 
-            // Right door decorations
-            const meshR = new THREE.Mesh(flowerGeo, flowerMat);
-            meshR.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
-            rightDoor.add(meshR);
+            const dTop = new THREE.Mesh(new THREE.BoxGeometry(paneWidth, innerThick, 20), woodMat);
+            dTop.position.set(0, height/2 - innerThick/2, 0);
+            
+            const dBot = new THREE.Mesh(new THREE.BoxGeometry(paneWidth, innerThick, 20), woodMat);
+            dBot.position.set(0, -height/2 + innerThick/2, 0);
+
+            const dLeft = new THREE.Mesh(new THREE.BoxGeometry(innerThick, height, 20), woodMat);
+            dLeft.position.set(-paneWidth/2 + innerThick/2, 0, 0);
+
+            const dRight = new THREE.Mesh(new THREE.BoxGeometry(innerThick, height, 20), woodMat);
+            dRight.position.set(paneWidth/2 - innerThick/2, 0, 0);
+
+            // Crossbars (Muntins) to create the classic 6-pane look per door
+            const crossbarV = new THREE.Mesh(new THREE.BoxGeometry(8, height - innerThick*2, 22), woodMat);
+            
+            const crossbarH1 = new THREE.Mesh(new THREE.BoxGeometry(paneWidth - innerThick*2, 8, 22), woodMat);
+            crossbarH1.position.y = height/6;
+
+            const crossbarH2 = new THREE.Mesh(new THREE.BoxGeometry(paneWidth - innerThick*2, 8, 22), woodMat);
+            crossbarH2.position.y = -height/6;
+
+            // Single glass plane sitting "inside" the wood bars
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(paneWidth - innerThick*2, height - innerThick*2, 4), ancientGlassMat);
+
+            doorBorder.add(dTop, dBot, dLeft, dRight, crossbarV, crossbarH1, crossbarH2, glass);
+            
+            // Offset the whole door to swing from its edge
+            doorBorder.position.set(direction * (paneWidth / 2), 0, 0); 
+            doorGroup.add(doorBorder);
+
+            return doorGroup;
         }
 
-        gateGroup.add(leftHinge, rightHinge);
-        scene.add(gateGroup);
+        // --- 2. Left Swinging Pane ---
+        const leftHinge = createDoorGroup(true);
+        leftHinge.position.set(-width / 2, 0, 0); 
 
-        gates.push({ 
-            left: leftHinge, 
-            right: rightHinge, 
-            trigger: triggerTime 
-        });
+        // --- 3. Right Swinging Pane ---
+        const rightHinge = createDoorGroup(false);
+        rightHinge.position.set(width / 2, 0, 0); 
+
+        windowGroup.add(leftHinge, rightHinge);
+        scene.add(windowGroup);
+
+        windowsArray.push({ left: leftHinge, right: rightHinge, trigger: triggerTime });
     }
 
-    // Place gates
-    buildFloralGate(-650, 0.18);  // Gate 1 (End of Sentence 1)
-    buildFloralGate(-1400, 0.43); // Gate 2 (End of Sentence 2)
-    buildFloralGate(-2150, 0.68); // Gate 3 (Opens to Home Page)
+    // Place Ancient Windows
+    buildAncientWindow(-650, 0.18);  
+    buildAncientWindow(-1400, 0.43); 
+    buildAncientWindow(-2150, 0.68); 
 
-    // Add falling petals to act as a "floor path" for depth perception
-    const petals = [];
-    for(let i = 0; i < 60; i++) {
-        const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
-        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
-        const petalMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), mat);
-        
-        // Spread them wide and deep, slightly below the camera
-        petalMesh.position.set((Math.random() - 0.5) * 1200, -200 + (Math.random() * 100), (Math.random() * -3000));
-        petalMesh.rotation.x = Math.PI / 2; // Lay them somewhat flat
-        
-        petalMesh.userData = { 
-            rotSpeedX: Math.random() * 0.02, 
-            rotSpeedY: Math.random() * 0.02,
-            floatUp: Math.random() * 0.5
-        };
-        scene.add(petalMesh);
-        petals.push(petalMesh);
+    // Ambient dust motes
+    const particles = [];
+    const particleGeo = new THREE.BufferGeometry();
+    const particleCount = 200;
+    const posArray = new Float32Array(particleCount * 3);
+
+    for(let i = 0; i < particleCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 2000; 
     }
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    const particleMat = new THREE.PointsMaterial({
+        size: 4,
+        color: 0xffe8c4, // Warm glowing dust
+        transparent: true,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending
+    });
+    
+    const particleSystem = new THREE.Points(particleGeo, particleMat);
+    scene.add(particleSystem);
 
     // --- 2. Auto-Animation & Progression Logic ---
     let autoProgress = 0;   
@@ -168,27 +210,18 @@ document.addEventListener("DOMContentLoaded", () => {
             targetCameraZ = autoProgress * -3000;
         }
 
-        // Move camera smoothly forward
         camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
 
-        // Animate Gates (Open when threshold is met)
-        gates.forEach((gate) => {
-            // If camera is getting close (based on progress timing), open doors
-            const targetRot = autoProgress >= gate.trigger ? Math.PI * 0.6 : 0;
-            
-            // Lerp left door rotation (opens inward/left)
-            gate.left.rotation.y += (-targetRot - gate.left.rotation.y) * 0.04;
-            // Lerp right door rotation (opens inward/right)
-            gate.right.rotation.y += (targetRot - gate.right.rotation.y) * 0.04;
+        // Animate Ancient Windows Swinging Open Outward
+        windowsArray.forEach((win) => {
+            const targetRot = autoProgress >= win.trigger ? Math.PI * 0.6 : 0;
+            win.left.rotation.y += (-targetRot - win.left.rotation.y) * 0.035; // slightly slower, heavier swing
+            win.right.rotation.y += (targetRot - win.right.rotation.y) * 0.035;
         });
 
-        // Drift background petals gently
-        petals.forEach((petal) => {
-            petal.rotation.x += petal.userData.rotSpeedX;
-            petal.rotation.y += petal.userData.rotSpeedY;
-            petal.position.y += petal.userData.floatUp;
-            if (petal.position.y > 400) petal.position.y = -300; // loop back to bottom
-        });
+        // Drift dust particles lazily
+        particleSystem.rotation.y += 0.0004;
+        particleSystem.rotation.x += 0.00015;
 
         updateHTMLUI();
         renderer.render(scene, camera);
@@ -210,7 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const sendBtn = document.getElementById('send-btn');
     const farewellOverlay = document.getElementById('farewell-overlay');
 
-    // Entering Chat
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
@@ -221,7 +253,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => appendMessage("bot", "Hi there. I'm Sara. I'm here to listen whenever you're ready. 💖"), 800);
     });
 
-    // Handle Back Button (Exiting Chat)
     window.addEventListener('popstate', (event) => {
         if (isChatting) handleExitChat();
     });
@@ -288,4 +319,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                                                              
+            
