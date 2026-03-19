@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     scene.add(dirLight);
 
     // --- Ancient Solid Wood Material ---
-    // Kept the wood a deep, rich dark brown for nice contrast against the blue sky
+    // Deep, rich dark brown for nice contrast against the blue sky
     const woodMat = new THREE.MeshStandardMaterial({ 
         color: 0x241118, 
         roughness: 0.95, 
@@ -176,6 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
+        // Animate Solid Wooden Windows Swinging Open Inward (Backwards)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
             win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
@@ -281,4 +282,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                                  
+        
