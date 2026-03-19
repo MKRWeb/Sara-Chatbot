@@ -177,19 +177,20 @@ document.addEventListener("DOMContentLoaded", () => {
         requestAnimationFrame(animate);
         
         if (!isChatting && autoProgress < 1.0) {
-            autoProgress += 0.0006; // SLOWER PROGRESSION
+            autoProgress += 0.0006; 
             if (autoProgress > 1.0) autoProgress = 1.0;
             targetCameraZ = autoProgress * -3000;
         }
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
-        // Animate Solid Wooden Windows Swinging Open Slower
+        // Animate Solid Wooden Windows Swinging Open Inward (Backwards into the scene)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
-            // Lower multiplier = slower, heavier rotation feel
-            win.left.rotation.y += (-targetRot - win.left.rotation.y) * 0.015; 
-            win.right.rotation.y += (targetRot - win.right.rotation.y) * 0.015;
+            
+            // Reversing the signs here pushes the doors BACK instead of front!
+            win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
+            win.right.rotation.y += (-targetRot - win.right.rotation.y) * 0.015;
         });
 
         particleSystem.rotation.y += 0.0003;
@@ -291,4 +292,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-        
+                                         
