@@ -1,44 +1,110 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- 1. Three.js Setup ---
+    // --- 1. Three.js Setup & Floral Gates ---
     const canvas = document.querySelector('#webgl-canvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffd1dc, 0.001);
+    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0008); // Soft romantic fog
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const floatingSymbols = [];
-    const emojis = ['❤️', '💋', '🫂', '💖', '💕'];
-
-    for(let i = 0; i < 60; i++) {
-        const emojiCanvas = document.createElement('canvas');
-        emojiCanvas.width = 128; emojiCanvas.height = 128;
-        const ctx = emojiCanvas.getContext('2d');
-        ctx.font = '72px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        
-        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-        ctx.fillText(randomEmoji, 64, 64);
-
-        const texture = new THREE.CanvasTexture(emojiCanvas);
-        const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85 });
-        const sprite = new THREE.Sprite(material);
-
-        sprite.position.set(
-            (Math.random() - 0.5) * 400, (Math.random() - 0.5) * 300, (Math.random() * -3000)
-        );
-        sprite.scale.set(15, 15, 1);
-        sprite.userData = { floatSpeed: Math.random() * 0.02 + 0.01, offset: Math.random() * Math.PI * 2 };
-
-        scene.add(sprite);
-        floatingSymbols.push(sprite);
+    // Helper: Generate Emoji Textures for Flowers
+    function createEmojiTexture(emoji, size = 128) {
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.font = `${size * 0.75}px serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, size / 2, size / 2);
+        return new THREE.CanvasTexture(c);
     }
 
-    // --- 2. Auto-Animation Logic ---
+    const flowerEmojis = ['🌸', '🌺', '🌷', '🌼'];
+    const flowerTextures = flowerEmojis.map(e => createEmojiTexture(e));
+
+    // Create a 3D Gate decorated with flowers
+    const gates = [];
+    function buildFloralGate(zPos, triggerTime) {
+        const gateGroup = new THREE.Group();
+        gateGroup.position.z = zPos;
+
+        const doorWidth = 350;
+        const doorHeight = 600;
+
+        // Semi-transparent frosted glass/white wood material for doors
+        const doorMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff, transparent: true, opacity: 0.6 
+        });
+
+        // --- Left Door ---
+        const leftHinge = new THREE.Group();
+        leftHinge.position.set(-doorWidth, 0, 0); // Position hinge at left edge
+
+        const leftDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
+        leftDoor.position.set(doorWidth / 2, 0, 0); // Offset mesh relative to hinge
+        leftHinge.add(leftDoor);
+
+        // --- Right Door ---
+        const rightHinge = new THREE.Group();
+        rightHinge.position.set(doorWidth, 0, 0); // Position hinge at right edge
+
+        const rightDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
+        rightDoor.position.set(-doorWidth / 2, 0, 0); // Offset mesh relative to hinge
+        rightHinge.add(rightDoor);
+
+        // Decorate doors with flowers
+        for (let i = 0; i < 20; i++) {
+            const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
+            const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+            
+            // Left door decorations
+            const spriteL = new THREE.Sprite(spriteMat);
+            spriteL.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
+            spriteL.scale.set(40, 40, 1);
+            leftDoor.add(spriteL);
+
+            // Right door decorations
+            const spriteR = new THREE.Sprite(spriteMat);
+            spriteR.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
+            spriteR.scale.set(40, 40, 1);
+            rightDoor.add(spriteR);
+        }
+
+        gateGroup.add(leftHinge, rightHinge);
+        scene.add(gateGroup);
+
+        // Save reference to animate later
+        gates.push({ 
+            left: leftHinge, 
+            right: rightHinge, 
+            trigger: triggerTime 
+        });
+    }
+
+    // Place gates at calculated Z-depths to match the timing of the sentences ending
+    // Camera travels from Z=0 to Z=-3000 over progress 0.0 -> 1.0
+    buildFloralGate(-650, 0.18);  // Gate 1 (End of Sentence 1)
+    buildFloralGate(-1400, 0.43); // Gate 2 (End of Sentence 2)
+    buildFloralGate(-2150, 0.68); // Gate 3 (Opens to Home Page)
+
+    // Add some soft ambient falling petals
+    const petals = [];
+    for(let i = 0; i < 40; i++) {
+        const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.7 });
+        const sprite = new THREE.Sprite(mat);
+        sprite.position.set((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 600, (Math.random() * -2800));
+        sprite.scale.set(15, 15, 1);
+        sprite.userData = { speedY: Math.random() * 0.5 + 0.2, speedX: Math.random() * 0.2 - 0.1 };
+        scene.add(sprite);
+        petals.push(sprite);
+    }
+
+    // --- 2. Auto-Animation & Progression Logic ---
     let autoProgress = 0;   
     let targetCameraZ = 0;
     let isChatting = false;
@@ -85,10 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const clock = new THREE.Clock();
     function animate() {
         requestAnimationFrame(animate);
-        const time = clock.getElapsedTime();
         
         if (!isChatting && autoProgress < 1.0) {
             autoProgress += 0.001; 
@@ -96,10 +160,25 @@ document.addEventListener("DOMContentLoaded", () => {
             targetCameraZ = autoProgress * -3000;
         }
 
+        // Move camera smoothly forward
         camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
 
-        floatingSymbols.forEach((symbol) => {
-            symbol.position.y += Math.sin(time * symbol.userData.floatSpeed + symbol.userData.offset) * 0.1;
+        // Animate Gates (Open when threshold is met)
+        gates.forEach((gate) => {
+            // If camera is getting close (based on progress timing), open doors
+            const targetRot = autoProgress >= gate.trigger ? Math.PI * 0.6 : 0;
+            
+            // Lerp left door rotation (opens inward/left)
+            gate.left.rotation.y += (-targetRot - gate.left.rotation.y) * 0.04;
+            // Lerp right door rotation (opens inward/right)
+            gate.right.rotation.y += (targetRot - gate.right.rotation.y) * 0.04;
+        });
+
+        // Drift background petals gently
+        petals.forEach((petal) => {
+            petal.position.y -= petal.userData.speedY;
+            petal.position.x += petal.userData.speedX;
+            if (petal.position.y < -400) petal.position.y = 400; // loop
         });
 
         updateHTMLUI();
@@ -125,8 +204,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Entering Chat
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
-        
-        // Push state to browser history (Intercept Back Button)
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
 
         introSequence.style.display = 'none'; 
@@ -137,32 +214,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Handle Back Button (Exiting Chat)
     window.addEventListener('popstate', (event) => {
-        if (isChatting) {
-            handleExitChat();
-        }
+        if (isChatting) handleExitChat();
     });
 
     function handleExitChat() {
         isChatting = false;
-        
-        // Hide chat interface
         chatInterface.classList.add('hidden');
         
-        // Show farewell charming message
         farewellOverlay.style.opacity = '1';
         farewellOverlay.style.pointerEvents = 'auto';
 
-        // Wait 3 seconds, hide farewell, and return to Home Screen
         setTimeout(() => {
             farewellOverlay.style.opacity = '0';
             farewellOverlay.style.pointerEvents = 'none';
             
             setTimeout(() => {
                 introSequence.style.display = 'flex';
-                autoProgress = 1.0; // Ensure we are exactly at the "Say hello" screen
-            }, 1000); // Wait for fade out
+                autoProgress = 1.0; 
+            }, 1000);
             
-        }, 3000); // 3 seconds to read the message
+        }, 3000); 
     }
 
     function appendMessage(sender, text) {
@@ -203,9 +274,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-            sendBtn.addEventListener('click', handleSend);
+    sendBtn.addEventListener('click', handleSend);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSend();
     });
 });
-    
+                
