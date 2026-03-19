@@ -5,28 +5,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    // Soft twilight blue fog 
-    scene.fog = new THREE.FogExp2(0x142433, 0.0007); 
+    // Soft eye-care blue fog instead of dark twilight
+    scene.fog = new THREE.FogExp2(0xdceaf5, 0.0007); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Cool, soft ambient lighting (gentle on the eyes)
-    const ambientLight = new THREE.AmbientLight(0xdbebf9, 0.6); 
+    // Bright, soft ambient lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xaad4eb, 1.0); 
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); 
     dirLight.position.set(200, 500, 300);
     scene.add(dirLight);
 
-    // --- Ancient Solid Wood Material ---
-    // Deep, rich dark brown for nice contrast against the blue sky
+    // Lighter, softer wood to match the bright theme
     const woodMat = new THREE.MeshStandardMaterial({ 
-        color: 0x241118, 
-        roughness: 0.95, 
-        metalness: 0.05 
+        color: 0x5c4033, 
+        roughness: 0.8, 
+        metalness: 0.1 
     });
 
     const windowsArray = [];
@@ -101,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buildSolidWoodenWindow(-1400, 0.43); 
     buildSolidWoodenWindow(-2150, 0.68); 
 
-    // Soft sky-blue floating particles
+    // Gentle dust particles tinted slightly darker blue to show up on the light background
     const particles = [];
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 200;
@@ -112,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     const particleMat = new THREE.PointsMaterial({
-        size: 4, color: 0x76b3e8, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+        size: 5, color: 0x5c98ce, transparent: true, opacity: 0.6, blending: THREE.NormalBlending
     });
     
     const particleSystem = new THREE.Points(particleGeo, particleMat);
@@ -176,7 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
-        // Animate Solid Wooden Windows Swinging Open Inward (Backwards)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
             win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
@@ -282,4 +280,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-        
+                
