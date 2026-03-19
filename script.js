@@ -5,26 +5,27 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0007); // Soft ambient fog
+    // Warm plum fog to match the eye-care background
+    scene.fog = new THREE.FogExp2(0x3d1026, 0.0007); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Warm, ambient lighting to highlight the wood
-    const ambientLight = new THREE.AmbientLight(0xfff0dd, 0.8); 
+    // Warm, dim lighting (Low blue-light emission)
+    const ambientLight = new THREE.AmbientLight(0xffc2c2, 0.6); 
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffe8c4, 1.5); 
+    const dirLight = new THREE.DirectionalLight(0xffa1a1, 1.2); 
     dirLight.position.set(200, 500, 300);
     scene.add(dirLight);
 
     // --- Ancient Solid Wood Material ---
     const woodMat = new THREE.MeshStandardMaterial({ 
-        color: 0x3d2817, // Rich, dark weathered brown
-        roughness: 0.9, 
-        metalness: 0.1 
+        color: 0x241118, // Very dark, warm mahogany wood
+        roughness: 0.95, 
+        metalness: 0.05 
     });
 
     const windowsArray = [];
@@ -65,10 +66,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const direction = isLeft ? 1 : -1;
             const doorBase = new THREE.Group();
 
-            // Main solid wood backing
             const backPanel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 4, height - 4, 12), woodMat);
 
-            // Add classic Z-brace styling commonly seen on ancient barn/cottage wooden doors
             const braceThick = 18;
             const topBrace = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 10, 25, braceThick), woodMat);
             topBrace.position.set(0, height / 2 - 40, 0);
@@ -76,15 +75,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const botBrace = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 10, 25, braceThick), woodMat);
             botBrace.position.set(0, -height / 2 + 40, 0);
 
-            // Diagonal cross brace
             const diagLength = Math.sqrt(Math.pow(doorWidth, 2) + Math.pow(height - 80, 2));
             const diagBrace = new THREE.Mesh(new THREE.BoxGeometry(diagLength - 20, 25, braceThick), woodMat);
             const angle = Math.atan2(height - 80, doorWidth);
             diagBrace.rotation.z = isLeft ? angle : -angle;
 
             doorBase.add(backPanel, topBrace, botBrace, diagBrace);
-            
-            // Offset the door to swing from the far edge
             doorBase.position.set(direction * (doorWidth / 2), 0, 0); 
             doorGroup.add(doorBase);
 
@@ -108,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buildSolidWoodenWindow(-1400, 0.43); 
     buildSolidWoodenWindow(-2150, 0.68); 
 
-    // Ambient floating light motes
+    // Warm rose-gold floating particles (soft on the eyes)
     const particles = [];
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 200;
@@ -119,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     const particleMat = new THREE.PointsMaterial({
-        size: 4, color: 0xffe8c4, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+        size: 4, color: 0xffaebc, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
     });
     
     const particleSystem = new THREE.Points(particleGeo, particleMat);
@@ -135,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('sec-2'), document.getElementById('sec-3')
     ];
 
-    // Adjusted timings for a slower, more deliberate reveal
     const sectionTimings = [
         { start: 0.00, peak: 0.05, hold: 0.16, end: 0.24 },
         { start: 0.24, peak: 0.30, hold: 0.41, end: 0.49 },
@@ -184,11 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
-        // Animate Solid Wooden Windows Swinging Open Inward (Backwards into the scene)
+        // Animate Solid Wooden Windows Swinging Open Inward (Backwards)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
-            
-            // Reversing the signs here pushes the doors BACK instead of front!
             win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
             win.right.rotation.y += (-targetRot - win.right.rotation.y) * 0.015;
         });
@@ -292,4 +285,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                                         
+    
