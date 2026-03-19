@@ -23,11 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Ancient Solid Wood Material ---
     // Deep, rich dark brown for nice contrast against the blue sky
-    const woodMat = new THREE.MeshStandardMaterial({ 
-        color: 0x241118, 
-        roughness: 0.95, 
-        metalness: 0.05 
-    });
+      
+const woodMat = new THREE.MeshStandardMaterial({ 
+    color: 0x825e4c, // This matches the specific brown in your image
+    roughness: 0.85, 
+    metalness: 0.05 
+});
+
 
     const windowsArray = [];
 
