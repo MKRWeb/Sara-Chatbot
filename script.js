@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    // Soft eye-care blue fog instead of dark twilight
     scene.fog = new THREE.FogExp2(0xdceaf5, 0.0007); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -13,7 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Bright, soft ambient lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
     scene.add(ambientLight);
 
@@ -21,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     dirLight.position.set(200, 500, 300);
     scene.add(dirLight);
 
-    // Lighter, softer wood to match the bright theme
     const woodMat = new THREE.MeshStandardMaterial({ 
         color: 0x5c4033, 
         roughness: 0.8, 
@@ -64,7 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const doorBase = new THREE.Group();
 
             const backPanel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 4, height - 4, 12), woodMat);
-
             const braceThick = 18;
             const topBrace = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 10, 25, braceThick), woodMat);
             topBrace.position.set(0, height / 2 - 40, 0);
@@ -100,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
     buildSolidWoodenWindow(-1400, 0.43); 
     buildSolidWoodenWindow(-2150, 0.68); 
 
-    // Gentle dust particles tinted slightly darker blue to show up on the light background
     const particles = [];
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 200;
@@ -195,7 +190,19 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 3. Chatbot NLP & Navigation History Logic ---
+    // --- 3. Audio & Chat Logic ---
+    const introMusic = document.getElementById('intro-music');
+    introMusic.volume = 0.3; // Keep the music soft and gentle
+
+    // Browsers block autoplay until the user interacts with the page.
+    // This listener starts the music as soon as the user clicks anywhere on the screen.
+    document.body.addEventListener('click', function playOnInteraction() {
+        if (!isChatting) {
+            introMusic.play().catch(e => console.log("Audio play blocked by browser."));
+        }
+        document.body.removeEventListener('click', playOnInteraction);
+    }, { once: true });
+
     const sayHelloBtn = document.getElementById('say-hello-btn');
     const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
@@ -207,6 +214,16 @@ document.addEventListener("DOMContentLoaded", () => {
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
+
+        // Fade out the music gently
+        let fadeOut = setInterval(() => {
+            if (introMusic.volume > 0.03) {
+                introMusic.volume -= 0.03;
+            } else {
+                introMusic.pause();
+                clearInterval(fadeOut);
+            }
+        }, 100);
 
         introSequence.style.display = 'none'; 
         chatInterface.classList.remove('hidden'); 
@@ -232,6 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 introSequence.style.display = 'flex';
                 autoProgress = 1.0; 
+                
+                // Bring the music back when returning to the intro
+                introMusic.volume = 0.3;
+                introMusic.play();
             }, 1000);
             
         }, 3000); 
@@ -280,4 +301,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                
+                                                              
