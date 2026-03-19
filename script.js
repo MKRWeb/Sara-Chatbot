@@ -5,7 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0008); // Soft romantic fog
+    // Soft romantic fog
+    scene.fog = new THREE.FogExp2(0xffe4e1, 0.0008); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
@@ -35,49 +36,50 @@ document.addEventListener("DOMContentLoaded", () => {
         const doorWidth = 350;
         const doorHeight = 600;
 
-        // Semi-transparent frosted glass/white wood material for doors
+        // FIXED: Changed to the deep pink accent color so it's highly visible!
         const doorMat = new THREE.MeshBasicMaterial({ 
-            color: 0xffffff, transparent: true, opacity: 0.6 
+            color: 0xd1497b, 
+            transparent: true, 
+            opacity: 0.85,
+            side: THREE.DoubleSide
         });
 
         // --- Left Door ---
         const leftHinge = new THREE.Group();
-        leftHinge.position.set(-doorWidth, 0, 0); // Position hinge at left edge
+        leftHinge.position.set(-doorWidth, 0, 0); 
 
         const leftDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
-        leftDoor.position.set(doorWidth / 2, 0, 0); // Offset mesh relative to hinge
+        leftDoor.position.set(doorWidth / 2, 0, 0); 
         leftHinge.add(leftDoor);
 
         // --- Right Door ---
         const rightHinge = new THREE.Group();
-        rightHinge.position.set(doorWidth, 0, 0); // Position hinge at right edge
+        rightHinge.position.set(doorWidth, 0, 0); 
 
         const rightDoor = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, 10), doorMat);
-        rightDoor.position.set(-doorWidth / 2, 0, 0); // Offset mesh relative to hinge
+        rightDoor.position.set(-doorWidth / 2, 0, 0); 
         rightHinge.add(rightDoor);
 
-        // Decorate doors with flowers
+        // FIXED: Use PlaneGeometry so the flowers rotate perfectly flat with the doors
         for (let i = 0; i < 20; i++) {
             const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
-            const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+            const flowerMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+            const flowerGeo = new THREE.PlaneGeometry(60, 60);
             
             // Left door decorations
-            const spriteL = new THREE.Sprite(spriteMat);
-            spriteL.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
-            spriteL.scale.set(40, 40, 1);
-            leftDoor.add(spriteL);
+            const meshL = new THREE.Mesh(flowerGeo, flowerMat);
+            meshL.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
+            leftDoor.add(meshL);
 
             // Right door decorations
-            const spriteR = new THREE.Sprite(spriteMat);
-            spriteR.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
-            spriteR.scale.set(40, 40, 1);
-            rightDoor.add(spriteR);
+            const meshR = new THREE.Mesh(flowerGeo, flowerMat);
+            meshR.position.set((Math.random() - 0.5) * doorWidth * 0.8, (Math.random() - 0.5) * doorHeight * 0.8, 6);
+            rightDoor.add(meshR);
         }
 
         gateGroup.add(leftHinge, rightHinge);
         scene.add(gateGroup);
 
-        // Save reference to animate later
         gates.push({ 
             left: leftHinge, 
             right: rightHinge, 
@@ -85,23 +87,29 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Place gates at calculated Z-depths to match the timing of the sentences ending
-    // Camera travels from Z=0 to Z=-3000 over progress 0.0 -> 1.0
+    // Place gates
     buildFloralGate(-650, 0.18);  // Gate 1 (End of Sentence 1)
     buildFloralGate(-1400, 0.43); // Gate 2 (End of Sentence 2)
     buildFloralGate(-2150, 0.68); // Gate 3 (Opens to Home Page)
 
-    // Add some soft ambient falling petals
+    // Add falling petals to act as a "floor path" for depth perception
     const petals = [];
-    for(let i = 0; i < 40; i++) {
+    for(let i = 0; i < 60; i++) {
         const tex = flowerTextures[Math.floor(Math.random() * flowerTextures.length)];
-        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.7 });
-        const sprite = new THREE.Sprite(mat);
-        sprite.position.set((Math.random() - 0.5) * 800, (Math.random() - 0.5) * 600, (Math.random() * -2800));
-        sprite.scale.set(15, 15, 1);
-        sprite.userData = { speedY: Math.random() * 0.5 + 0.2, speedX: Math.random() * 0.2 - 0.1 };
-        scene.add(sprite);
-        petals.push(sprite);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const petalMesh = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), mat);
+        
+        // Spread them wide and deep, slightly below the camera
+        petalMesh.position.set((Math.random() - 0.5) * 1200, -200 + (Math.random() * 100), (Math.random() * -3000));
+        petalMesh.rotation.x = Math.PI / 2; // Lay them somewhat flat
+        
+        petalMesh.userData = { 
+            rotSpeedX: Math.random() * 0.02, 
+            rotSpeedY: Math.random() * 0.02,
+            floatUp: Math.random() * 0.5
+        };
+        scene.add(petalMesh);
+        petals.push(petalMesh);
     }
 
     // --- 2. Auto-Animation & Progression Logic ---
@@ -176,9 +184,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Drift background petals gently
         petals.forEach((petal) => {
-            petal.position.y -= petal.userData.speedY;
-            petal.position.x += petal.userData.speedX;
-            if (petal.position.y < -400) petal.position.y = 400; // loop
+            petal.rotation.x += petal.userData.rotSpeedX;
+            petal.rotation.y += petal.userData.rotSpeedY;
+            petal.position.y += petal.userData.floatUp;
+            if (petal.position.y > 400) petal.position.y = -300; // loop back to bottom
         });
 
         updateHTMLUI();
@@ -279,4 +288,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                
+                                                              
