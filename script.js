@@ -1,42 +1,33 @@
 /* ═══════════════════════════════════════════════════════════
-   SARA — Complete Engine
-   Visibility rule: ONLY style.display + .visible class used.
-   NO phase-off / phase-in / phase-flex classes anywhere.
+   SARA — 3D FLOWER GATE ENGINE
+   Algorithm: Sequential gate open → words reveal → gate close → next gate
+   Each gate pair swings open on Y-axis via CSS 3D transform.
+   Words cascade in after gate is fully open.
+   On sentence completion, gate closes, next gate appears.
 ═══════════════════════════════════════════════════════════ */
 'use strict';
 
-/* ────────────────────────────────────────
-   SHOW / HIDE HELPERS  (THE ONLY WAY we
-   show or hide elements in this entire file)
-──────────────────────────────────────────
-   showEl(el)  → display:flex, then opacity:1 via .visible
-   hideEl(el)  → opacity:0, then display:none after transition
-──────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   SHOW / HIDE HELPERS
+───────────────────────────────────────────── */
 function showEl(el, display) {
   if (!el) return;
   el.style.display = display || 'flex';
-  // double-rAF ensures display renders before opacity transition fires
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      el.classList.add('visible');
-    });
+    requestAnimationFrame(() => { el.classList.add('visible'); });
   });
 }
 function hideEl(el, onDone) {
   if (!el) return;
   el.classList.remove('visible');
-  // wait for opacity transition (longest is .9s)
-  setTimeout(() => {
-    el.style.display = 'none';
-    if (onDone) onDone();
-  }, 950);
+  setTimeout(() => { el.style.display = 'none'; if (onDone) onDone(); }, 950);
 }
 
 /* ─────────────────────────────────────────────
    CURSOR
 ───────────────────────────────────────────── */
 ;(function () {
-  const dot  = document.getElementById('c-dot');
+  const dot = document.getElementById('c-dot');
   const ring = document.getElementById('c-ring');
   if (!dot || !ring) return;
   let mx = -200, my = -200, rx = -200, ry = -200;
@@ -58,13 +49,13 @@ function hideEl(el, onDone) {
 /* ─────────────────────────────────────────────
    MATH HELPERS
 ───────────────────────────────────────────── */
-const lerp  = (a, b, t) => a + (b - a) * t;
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const rand  = (a, b) => a + Math.random() * (b - a);
+const lerp   = (a, b, t) => a + (b - a) * t;
+const clamp  = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand   = (a, b) => a + Math.random() * (b - a);
 const smooth = t => t * t * (3 - 2 * t);
 
 /* ─────────────────────────────────────────────
-   SPRING PHYSICS  (natural floating motion)
+   SPRING PHYSICS
 ───────────────────────────────────────────── */
 class Spring {
   constructor(k = 0.04, d = 0.18) {
@@ -77,22 +68,22 @@ class Spring {
 }
 class FloatPhysics {
   constructor(bx, by) {
-    this.sx = new Spring(0.028 + rand(0,.01), 0.14 + rand(0,.06));
-    this.sy = new Spring(0.022 + rand(0,.01), 0.12 + rand(0,.06));
+    this.sx = new Spring(0.028 + rand(0, .01), 0.14 + rand(0, .06));
+    this.sy = new Spring(0.022 + rand(0, .01), 0.12 + rand(0, .06));
     this.sr = new Spring(0.018, 0.10);
     this.phase = rand(0, Math.PI * 2);
     this.freq  = rand(0.0004, 0.0009);
-    this.amp   = { x: rand(.3,.7), y: rand(.4,.9), r: rand(.015,.06) };
+    this.amp   = { x: rand(.3, .7), y: rand(.4, .9), r: rand(.015, .06) };
     this.bx = bx || 0; this.by = by || 0; this.t = 0;
   }
   update(dt) {
     this.t += dt;
     const t = this.t * 1000;
-    const nx = Math.sin(t*this.freq + this.phase)*this.amp.x
-             + Math.sin(t*this.freq*1.618 + this.phase*1.3)*this.amp.x*.4;
-    const ny = Math.sin(t*this.freq*.8 + this.phase*1.7)*this.amp.y
-             + Math.cos(t*this.freq*1.2 + this.phase*.9)*this.amp.y*.35;
-    const nr = Math.sin(t*this.freq*.6 + this.phase*2)*this.amp.r;
+    const nx = Math.sin(t * this.freq + this.phase) * this.amp.x
+             + Math.sin(t * this.freq * 1.618 + this.phase * 1.3) * this.amp.x * .4;
+    const ny = Math.sin(t * this.freq * .8 + this.phase * 1.7) * this.amp.y
+             + Math.cos(t * this.freq * 1.2 + this.phase * .9) * this.amp.y * .35;
+    const nr = Math.sin(t * this.freq * .6 + this.phase * 2) * this.amp.r;
     this.sx.target = this.bx + nx;
     this.sy.target = this.by + ny;
     this.sr.target = nr;
@@ -101,14 +92,14 @@ class FloatPhysics {
 }
 
 /* ─────────────────────────────────────────────
-   THREE.JS  WebGL ENGINE
+   THREE.JS BACKGROUND RENDERER
 ───────────────────────────────────────────── */
-const canvas   = document.getElementById('main-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+const mainCanvas = document.getElementById('main-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas: mainCanvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.0;
 
 const scene  = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 300);
@@ -120,20 +111,18 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-/* ── BACKGROUND GLSL SHADER ── */
+/* Night garden GLSL background — rose, violet, deep forest tones */
 const bgMat = new THREE.ShaderMaterial({
   uniforms: {
     uTime:  { value: 0 },
-    uScene: { value: 0 },   // 0=sky 1=dive 2=deep 3=meet
-    uBlend: { value: 0 },   // cross-fade 0→1
+    uScene: { value: 0 },
+    uBlend: { value: 0 },
+    uGate:  { value: 0 }, // 0-3 which gate we're on (blends petal glow)
   },
-  vertexShader: `
-    varying vec2 vUv;
-    void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }
-  `,
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }`,
   fragmentShader: `
     precision highp float;
-    uniform float uTime, uScene, uBlend;
+    uniform float uTime, uScene, uBlend, uGate;
     varying vec2 vUv;
 
     float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5); }
@@ -148,401 +137,560 @@ const bgMat = new THREE.ShaderMaterial({
       return v;
     }
 
-    vec3 sky(vec2 uv){
-      vec3 top=vec3(0.02,0.04,0.10);
-      vec3 mid=vec3(0.04,0.10,0.22);
-      vec3 hor=vec3(0.08,0.22,0.48);
-      vec3 col=uv.y>.4
-        ?mix(hor,mix(mid,top,(uv.y-.4)/.6),smoothstep(.4,1.,uv.y))
-        :mix(vec3(0.02,0.05,0.12),hor,uv.y/.4);
-      float clouds=fbm(uv*2.8+vec2(uTime*.012,0.))*fbm(uv*5.+vec2(-uTime*.008,0.));
-      col=mix(col,vec3(0.06,0.12,0.28),smoothstep(.3,.6,clouds)*.18*(1.-uv.y));
-      float shimmer=pow(max(0.,sin(uv.x*18.+uTime*2.8)*sin(uTime*1.4)),.8)*.04;
-      shimmer*=smoothstep(.35,.0,abs(uv.y-.28));
-      col+=shimmer*vec3(0.3,0.6,1.0);
-      col+=step(.97,noise(uv*220.+uTime*.02))*uv.y*.7*vec3(0.6,0.8,1.0);
+    /* Night garden — deep violet-rose sky with moonlight */
+    vec3 garden(vec2 uv){
+      vec3 deep  = vec3(0.015,0.008,0.020);
+      vec3 mid   = vec3(0.040,0.018,0.055);
+      vec3 glow  = vec3(0.080,0.030,0.085);
+      float moon = exp(-length(uv-vec2(.75,.82))*7.)*0.5;
+      vec3 col = mix(deep, mix(mid, glow, pow(uv.y,.5)), uv.y*.9);
+      col += moon*vec3(0.25,0.18,0.30);
+      /* Petals floating */
+      float p1=step(.992,noise(uv*110.+vec2(uTime*.015,uTime*-.008)))*uv.y*.6;
+      float p2=step(.994,noise(uv*85. +vec2(-uTime*.01,uTime*.012)))*0.4;
+      col += p1*vec3(0.6,0.25,0.38);
+      col += p2*vec3(0.55,0.22,0.50);
+      float fog=fbm(uv*3.+vec2(uTime*.006,0.))*.08*(1.-uv.y);
+      col += fog*vec3(0.08,0.04,0.12);
       return col;
     }
-    vec3 dive(vec2 uv){
-      vec3 col=mix(vec3(0.01,0.04,0.14),vec3(0.04,0.12,0.30),pow(uv.y,.7));
-      col+=sin(uv.x*22.+uTime*1.5)*sin(uv.y*14.+uTime*.8)*.03*vec3(0.2,0.5,1.0);
-      col+=pow(fbm(uv*9.+vec2(uTime*.1,uTime*.08)),.9)*.12*(1.-uv.y)*vec3(0.3,0.6,1.0);
+
+    /* Moonlit bloom — richer, warmer moon glow for gate 2 */
+    vec3 bloom(vec2 uv){
+      vec3 col = vec3(0.020,0.010,0.030);
+      float gx=exp(-length(uv-vec2(.5,.8))*5.)*.6;
+      col += gx*vec3(0.15,0.08,0.20);
+      float veil=fbm(uv*4.-vec2(uTime*.008,0.))*.06;
+      col += veil*vec3(0.1,0.06,0.14);
+      float petals=step(.989,noise(uv*130.+vec2(uTime*.02,-uTime*.015)))*0.55;
+      col += petals*vec3(0.55,0.20,0.35);
+      col = mix(col,vec3(0.04,0.02,0.06),pow(1.-uv.y,.6)*.5);
       return col;
     }
-    vec3 deep(vec2 uv){
-      vec3 col=mix(vec3(0.01,0.02,0.06),vec3(0.02,0.06,0.18),pow(uv.y,.4));
-      float rays=0.;
-      for(int i=0;i<5;i++){
-        float fi=float(i);
-        float cx=.18+fi*.16+sin(uTime*.035+fi*1.1)*.04;
-        float ray=exp(-pow((uv.x-cx)/(uv.y+.015+fi*.05),2.)*75.)*(1.-uv.y*.8);
-        ray*=smoothstep(.85,0.,uv.y)*(.4+.6*sin(uTime*.25+fi*1.3));
-        rays+=ray;
-      }
-      col+=rays*vec3(0.15,0.45,1.0)*.45;
-      float caus=pow(fbm(uv*14.+vec2(uTime*.07,-uTime*.05))*fbm(uv*9.-vec2(uTime*.04,uTime*.06)),1.6)*.2;
-      col+=caus*vec3(0.2,0.5,1.0);
-      col+=step(.96,noise(uv*180.+uTime*.04))*.5*vec3(0.4,0.7,1.0);
+
+    /* Golden grove — warm amber glow for gate 3 */
+    vec3 golden(vec2 uv){
+      vec3 col = vec3(0.018,0.012,0.005);
+      float gx=exp(-length(uv-vec2(.4,.75))*6.)*.55;
+      col += gx*vec3(0.25,0.15,0.04);
+      float shimmer=sin(uv.x*24.+uTime*1.8)*sin(uTime*1.1)*.03;
+      shimmer*=smoothstep(.4,.0,abs(uv.y-.35));
+      col += shimmer*vec3(0.6,0.4,0.1);
+      float p=step(.991,noise(uv*100.+vec2(uTime*.018,0.)))*.5;
+      col += p*vec3(0.55,0.35,0.05);
       return col;
     }
-    vec3 meet(vec2 uv){
-      vec3 col=mix(vec3(0.01,0.02,0.05),vec3(0.02,0.06,0.15),pow(uv.y,.5));
-      col+=exp(-length(uv-vec2(.5,.48))*3.2)*.5*vec3(0.2,0.5,1.0);
-      col+=step(.96,noise(uv*200.+uTime*.03))*.7*vec3(0.6,0.85,1.0);
-      float gx=step(.98,fract(uv.x*18.));float gy=step(.98,fract(uv.y*12.));
-      col+=(gx+gy)*vec3(0.1,0.3,0.7)*.04;
+
+    /* Sacred rose — peak petal bloom for final gate */
+    vec3 sacred(vec2 uv){
+      vec3 col = vec3(0.020,0.008,0.015);
+      float core=exp(-length(uv-vec2(.5,.5))*3.8)*.65;
+      col += core*vec3(0.30,0.10,0.20);
+      float outer=exp(-length(uv-vec2(.5,.5))*1.2)*.18;
+      col += outer*vec3(0.12,0.05,0.10);
+      float sparks=step(.988,noise(uv*150.+vec2(uTime*.025,-uTime*.018)))*.8;
+      col += sparks*vec3(0.70,0.30,0.45);
+      float gold=step(.993,noise(uv*90.+vec2(uTime*.014,uTime*.010)))*.45;
+      col += gold*vec3(0.60,0.40,0.08);
       return col;
     }
 
     void main(){
       int s=int(uScene);
       vec3 a,b;
-      if(s==0){ a=sky(vUv);  b=dive(vUv); }
-      else if(s==1){ a=dive(vUv); b=deep(vUv); }
-      else         { a=deep(vUv); b=meet(vUv); }
-      gl_FragColor=vec4(mix(a,b,uBlend),1.);
+      if(s==0){ a=garden(vUv); b=bloom(vUv); }
+      else if(s==1){ a=bloom(vUv); b=golden(vUv); }
+      else         { a=golden(vUv); b=sacred(vUv); }
+      vec3 col = mix(a,b,uBlend);
+      /* Subtle scanline texture */
+      float scan=sin(vUv.y*800.)*0.012;
+      col -= scan*0.3;
+      gl_FragColor=vec4(col,1.);
     }
   `,
   depthTest: false, depthWrite: false,
 });
-scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), bgMat));
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat));
 
-/* ── LIGHTS — cold blue masculine ── */
-const ambLight  = new THREE.AmbientLight(0x8ab0d8, 0.5);
-const sunLight  = new THREE.DirectionalLight(0xb0d0f8, 1.2);
-sunLight.position.set(3, 8, 5);
-const fillLight = new THREE.DirectionalLight(0x304870, 0.4);
-fillLight.position.set(-5, 2, -3);
-const deepLight = new THREE.PointLight(0x2266cc, 0, 16);
-deepLight.position.set(0, 2, 3);
-scene.add(ambLight, sunLight, fillLight, deepLight);
+/* ── AMBIENT GARDEN LIGHTS ── */
+const ambLight  = new THREE.AmbientLight(0xd8a0c0, 0.45);
+const moonLight = new THREE.DirectionalLight(0xd0c0e8, 0.9);
+moonLight.position.set(-3, 8, 6);
+const roseLight = new THREE.PointLight(0xe88090, 0.6, 20);
+roseLight.position.set(2, 3, 4);
+scene.add(ambLight, moonLight, roseLight);
 
-/* ── STONE MATERIAL — cold steel grey ── */
-const stoneMat = () => new THREE.MeshStandardMaterial({ color:0x8090a8, roughness:.82, metalness:.18 });
-
-/* ── COLUMN ── */
-const colGrp = new THREE.Group();
-colGrp.add(new THREE.Mesh(new THREE.CylinderGeometry(.32,.36,1.8,10), stoneMat()));
-const colCap = new THREE.Mesh(new THREE.BoxGeometry(.78,.18,.78), stoneMat());
-colCap.position.y = .99; colGrp.add(colCap);
-colGrp.position.set(-3.4, .4, 1.8); colGrp.rotation.z = .12;
-scene.add(colGrp);
-
-/* ── STEPPING STONES ── */
-const stoneData = [
-  [-1.4,-1.1,2.8, 1.1,.12,.65], [0.1,-1.0,2.2, .9,.10,.55], [1.4,-1.1,1.6, .75,.11,.48]
+/* ── CAMERA KEYFRAME PATH (garden dive) ── */
+const KFRAMES = [
+  { t: 0.00, px: 0,    py: 0,    pz: 12,  lx: 0,   ly: 0,   lz: 0  },
+  { t: 0.20, px: 0.3,  py: 0.4,  pz: 10,  lx: 0,   ly: 0.1, lz: 0  },
+  { t: 0.42, px: -0.2, py: 0.2,  pz: 8.5, lx: 0,   ly: 0,   lz: -.4},
+  { t: 0.65, px: 0.1,  py: -0.3, pz: 7,   lx: 0,   ly: -.2, lz: -.8},
+  { t: 0.82, px: 0,    py: -0.8, pz: 5.5, lx: 0,   ly: -.4, lz:-1.2},
+  { t: 1.00, px: 0,    py: -1.2, pz: 4,   lx: 0,   ly: -.6, lz:-1.5},
 ];
-const stones = stoneData.map(d => {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(d[3],d[4],d[5]), stoneMat());
-  m.position.set(d[0],d[1],d[2]); m.rotation.y = rand(0,.2);
-  scene.add(m); return m;
-});
 
-/* ── CONCH ── */
-const cpts = [];
-for(let i=0;i<22;i++){const t=i/21; cpts.push(new THREE.Vector2((.04+t*.44)*Math.pow(Math.sin(t*Math.PI),.72),t*1.28-.08));}
-const conch = new THREE.Mesh(
-  new THREE.LatheGeometry(cpts,14,0,Math.PI*1.88),
-  new THREE.MeshStandardMaterial({color:0xf5c8a0,roughness:.26,metalness:.22,side:THREE.DoubleSide})
-);
-conch.position.set(3.3,.7,1.6); conch.rotation.set(.28,-.42,.16); scene.add(conch);
-
-/* ── ROCK ── */
-const rockGeo = new THREE.DodecahedronGeometry(.52,0);
-const rv = rockGeo.attributes.position;
-for(let i=0;i<rv.count;i++) rv.setXYZ(i,rv.getX(i)*(1+rand(-.18,.18)),rv.getY(i)*(1+rand(-.18,.18)),rv.getZ(i)*(1+rand(-.18,.18)));
-rockGeo.computeVertexNormals();
-const rock = new THREE.Mesh(rockGeo, stoneMat());
-rock.position.set(-1.2,1.8,.8); rock.rotation.set(rand(0,1),rand(0,1),rand(0,1)); scene.add(rock);
-
-/* ── OYSTER + PEARL ── */
-const oGrp = new THREE.Group();
-const spts = []; for(let i=0;i<14;i++){const t=i/13;spts.push(new THREE.Vector2(t*.78,Math.sin(t*Math.PI)*.3));}
-const sMat = new THREE.MeshStandardMaterial({color:0xd0cac4,roughness:.38,metalness:.32,side:THREE.DoubleSide});
-const sGeo = new THREE.LatheGeometry(spts,18);
-oGrp.add(new THREE.Mesh(sGeo,sMat));
-const sTop = new THREE.Mesh(sGeo,sMat); sTop.rotation.x=-.7; oGrp.add(sTop);
-const pearl = new THREE.Mesh(
-  new THREE.SphereGeometry(.19,20,20),
-  new THREE.MeshStandardMaterial({color:0xfaf6ef,roughness:.06,metalness:.74,emissive:0xfff4d8,emissiveIntensity:.45})
-);
-pearl.position.y=.14; oGrp.add(pearl);
-oGrp.position.set(.6,1.2,3.2); oGrp.rotation.y=.35; scene.add(oGrp);
-
-/* ── BUBBLES ── */
-const bubMat = new THREE.MeshStandardMaterial({color:0xd8eef8,roughness:.02,metalness:.0,transparent:true,opacity:.38});
-const bubs = [
-  new THREE.Mesh(new THREE.SphereGeometry(.28,22,22),bubMat),
-  new THREE.Mesh(new THREE.SphereGeometry(.18,22,22),bubMat),
-];
-bubs[0].position.set(2.8,1.0,1.4); bubs[1].position.set(-.8,2.2,1.0);
-bubs.forEach(b => scene.add(b));
-
-/* ── UNDERWATER PARTICLES ── */
-const UW_N=180, uwGeo=new THREE.BufferGeometry();
-const uwPos=new Float32Array(UW_N*3), uwSpd=new Float32Array(UW_N);
-for(let i=0;i<UW_N;i++){
-  uwPos[i*3]=rand(-10,10);uwPos[i*3+1]=rand(-6,6);uwPos[i*3+2]=rand(-5,5);
-  uwSpd[i]=rand(.004,.016);
-}
-uwGeo.setAttribute('position',new THREE.BufferAttribute(uwPos,3));
-const uwMat=new THREE.PointsMaterial({size:.08,color:0xaaaaff,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
-scene.add(new THREE.Points(uwGeo,uwMat));
-
-/* ── PHYSICS ── */
-const phy = {
-  col:new FloatPhysics(-3.4,.4), s0:new FloatPhysics(-1.4,-1.1),
-  s1:new FloatPhysics(.1,-1.0),  s2:new FloatPhysics(1.4,-1.1),
-  con:new FloatPhysics(3.3,.7),  rock:new FloatPhysics(-1.2,1.8),
-  oys:new FloatPhysics(.6,1.2),  b0:new FloatPhysics(2.8,1.0),
-  b1:new FloatPhysics(-.8,2.2),
-};
-
-/* ── CAMERA PATH ── */
-const CAM=[
-  [0,.0,  .0, 12,  0,   .0,   0],
-  [0,.15, .3, 10.5,0,   .1,   0],
-  [0,.28, .1,  9,  0,   .0,  -.5],
-  [0,.50,-.4,  7,  0,  -.2,  -1],
-  [0,.68,-.8,  5.5,0,  -.5, -1.5],
-  [0,.85,-1.2, 4,  0,  -.8,  -2],
-  [0,1.0,-1.5, 3,  0, -1.0,  -2],
-];
-// [px,t,py,pz,...] — actually stored as [px,t,py,pz,lx,ly,lz]
-// Re-format:
-const KFRAMES=[
-  {t:0.00, px:0,py:0,  pz:12, lx:0,ly:0,  lz:0 },
-  {t:0.15, px:0,py:.3, pz:10.5,lx:0,ly:.1,lz:0 },
-  {t:0.28, px:.5,py:.1,pz:9,  lx:0,ly:0, lz:-.5},
-  {t:0.50, px:-.3,py:-.4,pz:7,lx:0,ly:-.2,lz:-1},
-  {t:0.68, px:0,py:-.8,pz:5.5,lx:0,ly:-.5,lz:-1.5},
-  {t:0.85, px:0,py:-1.2,pz:4, lx:0,ly:-.8,lz:-2},
-  {t:1.00, px:0,py:-1.5,pz:3, lx:0,ly:-1.0,lz:-2},
-];
-function camAt(t){
-  let i=0;
-  while(i<KFRAMES.length-2 && KFRAMES[i+1].t<=t) i++;
-  const a=KFRAMES[i],b=KFRAMES[i+1];
-  const f=smooth(clamp((t-a.t)/(b.t-a.t),0,1));
-  return{
-    px:lerp(a.px,b.px,f),py:lerp(a.py,b.py,f),pz:lerp(a.pz,b.pz,f),
-    lx:lerp(a.lx,b.lx,f),ly:lerp(a.ly,b.ly,f),lz:lerp(a.lz,b.lz,f),
+function camAt(t) {
+  let i = 0;
+  while (i < KFRAMES.length - 2 && KFRAMES[i + 1].t <= t) i++;
+  const a = KFRAMES[i], b = KFRAMES[i + 1];
+  const f = smooth(clamp((t - a.t) / (b.t - a.t), 0, 1));
+  return {
+    px: lerp(a.px, b.px, f), py: lerp(a.py, b.py, f), pz: lerp(a.pz, b.pz, f),
+    lx: lerp(a.lx, b.lx, f), ly: lerp(a.ly, b.ly, f), lz: lerp(a.lz, b.lz, f),
   };
 }
 
-/* ── RENDER VARS ── */
-let clockT=0, sceneProg=0, bgScene=0, bgBlend=0;
-const lookTgt=new THREE.Vector3();
-let lastT=performance.now();
+let clockT = 0, sceneProg = 0, bgScene = 0, bgBlend = 0;
+const lookTgt = new THREE.Vector3();
+let lastT = performance.now();
 
-function renderLoop(now){
-  requestAnimationFrame(renderLoop);
-  const dt=Math.min((now-lastT)/1000,.05); lastT=now; clockT+=dt;
+function renderBg(now) {
+  requestAnimationFrame(renderBg);
+  const dt = Math.min((now - lastT) / 1000, .05); lastT = now; clockT += dt;
 
-  bgMat.uniforms.uTime.value=clockT;
-  bgMat.uniforms.uScene.value=bgScene;
-  bgMat.uniforms.uBlend.value=bgBlend;
+  bgMat.uniforms.uTime.value  = clockT;
+  bgMat.uniforms.uScene.value = bgScene;
+  bgMat.uniforms.uBlend.value = bgBlend;
+  bgMat.uniforms.uGate.value  = currentGate;
 
-  const cp=camAt(clamp(sceneProg,0,1));
-  camera.position.set(cp.px,cp.py,cp.pz);
-  lookTgt.x+=(cp.lx-lookTgt.x)*.07;
-  lookTgt.y+=(cp.ly-lookTgt.y)*.07;
-  lookTgt.z+=(cp.lz-lookTgt.z)*.07;
+  const cp = camAt(clamp(sceneProg, 0, 1));
+  camera.position.set(cp.px, cp.py, cp.pz);
+  lookTgt.x += (cp.lx - lookTgt.x) * .06;
+  lookTgt.y += (cp.ly - lookTgt.y) * .06;
+  lookTgt.z += (cp.lz - lookTgt.z) * .06;
   camera.lookAt(lookTgt);
 
-  const pc=phy.col.update(dt), ps0=phy.s0.update(dt), ps1=phy.s1.update(dt),
-        ps2=phy.s2.update(dt), pco=phy.con.update(dt), prk=phy.rock.update(dt),
-        poy=phy.oys.update(dt), pb0=phy.b0.update(dt),  pb1=phy.b1.update(dt);
+  /* Gentle rose light pulse */
+  roseLight.intensity = 0.5 + Math.sin(clockT * 1.4) * 0.2;
 
-  colGrp.position.y=.4+pc.y; colGrp.rotation.z=.12+pc.r;
-  stones[0].position.y=-1.1+ps0.y;
-  stones[1].position.y=-1.0+ps1.y;
-  stones[2].position.y=-1.1+ps2.y;
-  conch.position.y=.7+pco.y; conch.rotation.y+=.004;
-  rock.position.y=1.8+prk.y; rock.rotation.y+=.003;
-  oGrp.position.y=1.2+poy.y; oGrp.rotation.y+=.0035;
-  pearl.material.emissiveIntensity=.38+Math.sin(clockT*2.2)*.18;
-  bubs[0].position.y=1.0+pb0.y;
-  bubs[1].position.y=2.2+pb1.y;
-
-  const heroAlpha=clamp(1-sceneProg*5,0,1);
-  [colGrp,stones[0],stones[1],stones[2],conch,rock,oGrp,bubs[0],bubs[1]].forEach(obj=>{
-    obj.traverse(c=>{ if(c.isMesh&&c.material){c.material.transparent=true;c.material.opacity=heroAlpha;} });
-  });
-
-  uwMat.opacity=clamp((sceneProg-.35)*4,0,.75);
-  if(uwMat.opacity>.01){
-    const p=uwGeo.attributes.position;
-    for(let i=0;i<UW_N;i++){p.setY(i,p.getY(i)+uwSpd[i]);if(p.getY(i)>7)p.setY(i,-6);}
-    p.needsUpdate=true;
-  }
-
-  deepLight.intensity=clamp((sceneProg-.4)*4,0,3);
-  ambLight.intensity=lerp(.7,.15,clamp(sceneProg*3,0,1));
-  sunLight.intensity=lerp(1.4,.05,clamp(sceneProg*5,0,1));
-
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
-renderLoop(performance.now());
+renderBg(performance.now());
 
 /* ─────────────────────────────────────────────
-   WORD-REVEAL ENGINE
-   Each .wm has overflow:hidden (clip boundary).
-   .w starts at translateY(110%) — below clip.
-   JS sets transition + translateY(0) → slides in.
-   Zero overlap is guaranteed by the clip structure.
+   ANIMATE VALUE HELPER
 ───────────────────────────────────────────── */
-const W_STAGGER = 65;
-const W_IN      = 760;
-const W_OUT     = 460;
-const EIN       = 'cubic-bezier(0.22,1,0.36,1)';
-const EOUT      = 'cubic-bezier(0.55,0,1,0.45)';
-
-function getWords(id){ return [...document.querySelectorAll('#'+id+' .w')]; }
-
-function revealWords(id, done){
-  const ws=getWords(id);
-  if(!ws.length){ done&&done(); return; }
-  ws.forEach(w=>{ w.style.transition='none'; w.style.transform='translateY(110%)'; w.style.opacity='0'; });
-  let last=0;
-  ws.forEach((w,i)=>{
-    const delay=i*W_STAGGER; last=delay+W_IN;
-    setTimeout(()=>{
-      w.style.transition=`transform ${W_IN}ms ${EIN}, opacity 80ms ease`;
-      w.style.transform='translateY(0)'; w.style.opacity='1';
-    },delay);
-  });
-  if(done) setTimeout(done,last);
-}
-
-function exitWords(id, done){
-  const ws=getWords(id);
-  if(!ws.length){ done&&done(); return; }
-  let last=0;
-  ws.forEach((w,i)=>{
-    const delay=i*42; last=delay+W_OUT;
-    setTimeout(()=>{
-      w.style.transition=`transform ${W_OUT}ms ${EOUT}, opacity ${W_OUT}ms ease`;
-      w.style.transform='translateY(-112%)'; w.style.opacity='0';
-    },delay);
-  });
-  if(done) setTimeout(done,last);
-}
-
-/* ─────────────────────────────────────────────
-   ANIMATE VALUE  (for bg cross-fades)
-───────────────────────────────────────────── */
-function animVal(from,to,dur,onUpdate,onDone){
-  const t0=performance.now();
-  (function tick(now){
-    const p=clamp((now-t0)/dur,0,1);
-    onUpdate(lerp(from,to,smooth(p)));
-    if(p<1) requestAnimationFrame(tick);
-    else if(onDone) onDone();
+function animVal(from, to, dur, onUpdate, onDone) {
+  const t0 = performance.now();
+  (function tick(now) {
+    const p = clamp((now - t0) / dur, 0, 1);
+    onUpdate(lerp(from, to, smooth(p)));
+    if (p < 1) requestAnimationFrame(tick);
+    else if (onDone) onDone();
   })(performance.now());
 }
 
 /* ─────────────────────────────────────────────
    PROGRESS BAR
 ───────────────────────────────────────────── */
-const progFill=document.getElementById('prog-fill');
-function setProgress(p){ if(progFill) progFill.style.width=clamp(p,0,100)+'%'; }
+const progFill = document.getElementById('prog-fill');
+function setProgress(p) { if (progFill) progFill.style.width = clamp(p, 0, 100) + '%'; }
 
 /* ─────────────────────────────────────────────
-   INTRO SEQUENCE CONTROLLER
-   Strict linear chain — callbacks only fire
-   after previous step 100% complete.
+   PIP TRACKER
 ───────────────────────────────────────────── */
-const HOLD = { s0:3400, s1:2800, s2:3200, s3:2400 };
-const TOTAL_MS = 22000;
+function updatePips(active) {
+  for (let i = 1; i <= 4; i++) {
+    const pip = document.getElementById('pip-' + i);
+    if (!pip) continue;
+    pip.classList.remove('active', 'done');
+    if (i < active)  pip.classList.add('done');
+    if (i === active) pip.classList.add('active');
+  }
+}
 
-function startIntro(){
-  const nav=document.getElementById('main-nav');
-  const wrap=document.getElementById('intro-wrap');
-  setTimeout(()=>nav&&nav.classList.add('show'), 700);
+/* ─────────────────────────────────────────────
+   WORD CASCADE ENGINE
+   Words inside .gate-text reveal word by word
+   with staggered delays after gate fully opens.
+───────────────────────────────────────────── */
+const WORD_STAGGER = 90;
+const WORD_DUR     = 700;
+const EOUT         = 'cubic-bezier(0.22,1,0.36,1)';
 
-  // Track camera progress over total duration
-  const t0=performance.now();
-  const ticker=setInterval(()=>{
-    sceneProg=clamp((performance.now()-t0)/TOTAL_MS,0,1);
-    if(sceneProg>=1) clearInterval(ticker);
-  },16);
+function revealGateWords(textEl, done) {
+  if (!textEl) { done && done(); return; }
+  const words = [...textEl.querySelectorAll('.word-inner')];
+  // Reset all
+  words.forEach(w => {
+    w.style.transition = 'none';
+    w.style.transform  = 'translateY(110%)';
+    w.style.opacity    = '0';
+    w.classList.remove('revealed');
+  });
+  textEl.classList.add('visible');
 
-  setProgress(0);
-
-  // All words start hidden
-  document.querySelectorAll('.w').forEach(w=>{
-    w.style.transform='translateY(110%)'; w.style.opacity='0';
+  let lastDelay = 0;
+  words.forEach((w, i) => {
+    const delay = i * WORD_STAGGER;
+    lastDelay = delay + WORD_DUR;
+    setTimeout(() => {
+      w.style.transition = `transform ${WORD_DUR}ms ${EOUT}, opacity 80ms ease`;
+      w.style.transform  = 'translateY(0)';
+      w.style.opacity    = '1';
+      w.classList.add('revealed');
+    }, delay);
   });
 
-  /* SCENE 0 → 1 → 2 → 3 → HOME */
-  revealWords('hl-1',()=>{
-    setProgress(22);
-    setTimeout(()=>{
-      exitWords('hl-1',()=>{
-        bgScene=0; bgBlend=0;
-        animVal(0,1,900,v=>bgBlend=v,()=>{
-          bgScene=1; bgBlend=0;
-          setProgress(45);
-          revealWords('hl-2',()=>{
-            setProgress(52);
-            setTimeout(()=>{
-              exitWords('hl-2',()=>{
-                animVal(0,1,900,v=>bgBlend=v,()=>{
-                  bgScene=2; bgBlend=0;
-                  setProgress(68);
-                  revealWords('hl-3',()=>{
-                    setProgress(76);
-                    setTimeout(()=>{
-                      exitWords('hl-3',()=>{
-                        animVal(0,1,900,v=>bgBlend=v,()=>{
-                          bgScene=2; bgBlend=1;
-                          setProgress(88);
-                          revealWords('hl-4',()=>{
-                            setProgress(100);
-                            setTimeout(()=>{
-                              exitWords('hl-4',()=>{
-                                clearInterval(ticker);
-                                // Hide intro: add .done class (CSS handles opacity+pointer-events)
-                                if(wrap) wrap.classList.add('done');
-                                if(nav){ nav.style.transition='opacity .8s'; nav.style.opacity='0'; nav.style.pointerEvents='none'; }
-                                // Show Sara home after intro fades
-                                setTimeout(showHome, 1200);
-                              });
-                            }, HOLD.s3);
-                          });
-                        });
-                      });
-                    }, HOLD.s2);
-                  });
+  if (done) setTimeout(done, lastDelay);
+}
+
+function hideGateWords(textEl, done) {
+  if (!textEl) { done && done(); return; }
+  const words = [...textEl.querySelectorAll('.word-inner')];
+  words.forEach((w, i) => {
+    setTimeout(() => {
+      w.style.transition = `transform 420ms cubic-bezier(0.55,0,1,0.45), opacity 420ms ease`;
+      w.style.transform  = 'translateY(-112%)';
+      w.style.opacity    = '0';
+    }, i * 45);
+  });
+  textEl.classList.remove('visible');
+  if (done) setTimeout(done, words.length * 45 + 420);
+}
+
+/* ─────────────────────────────────────────────
+   PETAL BURST — spawns SVG petals on gate open
+───────────────────────────────────────────── */
+function spawnPetals(stageEl) {
+  if (!stageEl) return;
+  const petalShapes = ['M0,-6 Q4,-3 0,6 Q-4,-3 0,-6', 'M0,-8 Q5,-4 4,4 Q0,8 -4,4 Q-5,-4 0,-8', 'M0,-5 Q3,-2 3,5 Q0,8 -3,5 Q-3,-2 0,-5'];
+  const colors = ['#e8859a', '#f2a7b8', '#c84c68', '#d4a96a', '#f0c0d0', '#b896d8'];
+
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    el.setAttribute('viewBox', '-10 -10 20 20');
+    el.style.cssText = `position:absolute;width:${12 + rand(0, 14)}px;height:${12 + rand(0, 14)}px;
+      left:${rand(20, 80)}%;top:${rand(20, 70)}%;pointer-events:none;z-index:40;
+      --pdx:${(rand(0, 1) > .5 ? 1 : -1) * rand(60, 180)}px;
+      --pdy:${rand(-100, -220)}px;
+      --pdr:${rand(-180, 180)}deg;`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', petalShapes[Math.floor(rand(0, petalShapes.length))]);
+    path.setAttribute('fill', colors[Math.floor(rand(0, colors.length))]);
+    path.setAttribute('opacity', '0.85');
+    el.appendChild(path);
+
+    el.classList.add('gate-petal');
+    el.style.animation = `none`;
+    stageEl.appendChild(el);
+
+    // Trigger animation after paint
+    const delay = rand(0, 400);
+    setTimeout(() => {
+      el.style.animation = `petalDrift ${rand(2, 4)}s ease-out ${delay}ms forwards`;
+      el.style.opacity = '1';
+    }, 10);
+
+    // Cleanup
+    setTimeout(() => el.remove(), delay + 4200);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   AMBIENT FLOWER SPAWNER (background garden)
+───────────────────────────────────────────── */
+let ambientFlowerTimer = null;
+function startAmbientFlowers() {
+  const introWrap = document.getElementById('intro-wrap');
+  if (!introWrap) return;
+
+  function spawnOne() {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    el.setAttribute('viewBox', '-12 -12 24 24');
+    const size = rand(8, 22);
+    const x = rand(0, 100);
+    const dur = rand(14, 28);
+    el.style.cssText = `width:${size}px;height:${size}px;left:${x}%;bottom:-5%;
+      position:absolute;animation:ambientFloat ${dur}s linear forwards;animation-delay:${rand(0, 2)}s;`;
+    el.classList.add('ambient-flower');
+
+    const petals = Math.floor(rand(5, 9));
+    const color1 = ['#c84c68', '#9b7fc4', '#c8940a', '#e8859a'][Math.floor(rand(0, 4))];
+    const color2 = ['#f2a7b8', '#d4a9f0', '#e8b420', '#f0c0d0'][Math.floor(rand(0, 4))];
+    for (let i = 0; i < petals; i++) {
+      const angle = (i / petals) * 360;
+      const petal = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      petal.setAttribute('cx', '0'); petal.setAttribute('cy', '-7');
+      petal.setAttribute('rx', '3'); petal.setAttribute('ry', '5.5');
+      petal.setAttribute('fill', i % 2 === 0 ? color1 : color2);
+      petal.setAttribute('opacity', '0.85');
+      petal.setAttribute('transform', `rotate(${angle})`);
+      el.appendChild(petal);
+    }
+    const center = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    center.setAttribute('cx', '0'); center.setAttribute('cy', '0'); center.setAttribute('r', '3');
+    center.setAttribute('fill', '#d4a96a');
+    el.appendChild(center);
+
+    introWrap.appendChild(el);
+    setTimeout(() => el.remove(), (dur + 2) * 1000);
+  }
+
+  ambientFlowerTimer = setInterval(spawnOne, 1800);
+  spawnOne();
+}
+function stopAmbientFlowers() {
+  if (ambientFlowerTimer) { clearInterval(ambientFlowerTimer); ambientFlowerTimer = null; }
+}
+
+/* ─────────────────────────────────────────────
+   GATE STATE MACHINE
+   States: idle → appearing → opening → wordsIn → wordsHold
+           → wordsOut → closing → closed → [next gate or done]
+───────────────────────────────────────────── */
+let currentGate = 0; // 0-indexed, 0 = gate1
+
+const GATE_CONFIG = [
+  {
+    id: 'gate-1', stageId: 'gate-stage-1', textId: 'gate-text-1',
+    holdMs: 3200, bgSceneTarget: 0, pip: 1,
+    progressBefore: 0, progressAfter: 22,
+  },
+  {
+    id: 'gate-2', stageId: 'gate-stage-2', textId: 'gate-text-2',
+    holdMs: 3000, bgSceneTarget: 1, pip: 2,
+    progressBefore: 30, progressAfter: 52,
+  },
+  {
+    id: 'gate-3', stageId: 'gate-stage-3', textId: 'gate-text-3',
+    holdMs: 2800, bgSceneTarget: 2, pip: 3,
+    progressBefore: 60, progressAfter: 76,
+  },
+  {
+    id: 'gate-4', stageId: 'gate-stage-4', textId: 'gate-text-4',
+    holdMs: 3600, bgSceneTarget: 2, pip: 4,
+    progressBefore: 82, progressAfter: 100,
+  },
+];
+
+/* ── GATE SWINGS OPEN (3D Y-axis rotation) ── */
+function openGate(gateEl, done) {
+  if (!gateEl) { done && done(); return; }
+  gateEl.classList.remove('closed', 'closing', 'open');
+  gateEl.classList.add('gate-active', 'opening');
+  // transition is 1.6s in CSS; wait 1700ms then call done
+  setTimeout(() => {
+    gateEl.classList.remove('opening');
+    gateEl.classList.add('open');
+    done && done();
+  }, 1700);
+}
+
+/* ── GATE SWINGS CLOSED ── */
+function closeGate(gateEl, done) {
+  if (!gateEl) { done && done(); return; }
+  gateEl.classList.remove('opening', 'open');
+  gateEl.classList.add('closing');
+  setTimeout(() => {
+    gateEl.classList.remove('closing', 'gate-active');
+    gateEl.classList.add('closed');
+    done && done();
+  }, 1300);
+}
+
+/* ── FADE IN GATE STAGE ── */
+function showGateStage(stageEl, done) {
+  if (!stageEl) { done && done(); return; }
+  stageEl.style.display = 'flex';
+  stageEl.style.opacity = '0';
+  stageEl.style.transition = 'opacity 0.8s ease';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      stageEl.style.opacity = '1';
+      if (done) setTimeout(done, 820);
+    });
+  });
+}
+
+/* ── FADE OUT GATE STAGE ── */
+function hideGateStage(stageEl, done) {
+  if (!stageEl) { done && done(); return; }
+  stageEl.style.transition = 'opacity 0.6s ease';
+  stageEl.style.opacity = '0';
+  setTimeout(() => {
+    stageEl.style.display = 'none';
+    done && done();
+  }, 650);
+}
+
+/* ─────────────────────────────────────────────
+   MASTER GATE SEQUENCE ENGINE
+   Processes gates sequentially, one at a time.
+───────────────────────────────────────────── */
+let gateSequenceDone = false;
+let camTicker = null;
+
+function runGateSequence(gateIndex, onAllDone) {
+  if (gateIndex >= GATE_CONFIG.length) {
+    onAllDone && onAllDone();
+    return;
+  }
+
+  currentGate = gateIndex;
+  const cfg = GATE_CONFIG[gateIndex];
+
+  const gateEl  = document.getElementById(cfg.id);
+  const stageEl = document.getElementById(cfg.stageId);
+  const textEl  = document.getElementById(cfg.textId);
+
+  // Update pips
+  updatePips(cfg.pip);
+  setProgress(cfg.progressBefore);
+
+  // 1. Show pip path indicator (first gate)
+  if (gateIndex === 0) {
+    const path = document.getElementById('gate-path');
+    if (path) { path.style.display = 'flex'; setTimeout(() => path.classList.add('show'), 200); }
+  }
+
+  // 2. Crossfade background if needed
+  const bgFadeMs = gateIndex === 0 ? 0 : 1000;
+  if (gateIndex > 0) {
+    const prevScene = bgScene;
+    bgScene = cfg.bgSceneTarget - 1;
+    animVal(0, 1, bgFadeMs, v => bgBlend = v, () => {
+      bgScene = cfg.bgSceneTarget;
+      bgBlend = 0;
+    });
+  }
+
+  // 3. Spawn petal ambient
+  setTimeout(() => { spawnPetals(stageEl); }, 600);
+
+  // 4. Show gate stage (fade in)
+  showGateStage(stageEl, () => {
+
+    // 5. Open gate doors (3D swing)
+    openGate(gateEl, () => {
+
+      // 6. Small pause after gate fully open
+      setTimeout(() => {
+
+        // 7. Reveal words
+        revealGateWords(textEl, () => {
+
+          // 8. Hold sentence on screen
+          setProgress(cfg.progressAfter);
+          setTimeout(() => {
+
+            // 9. Hide words
+            hideGateWords(textEl, () => {
+
+              // 10. Close gate
+              closeGate(gateEl, () => {
+
+                // 11. Fade out stage
+                hideGateStage(stageEl, () => {
+
+                  // 12. Small inter-gate pause
+                  setTimeout(() => {
+
+                    // 13. Run next gate
+                    runGateSequence(gateIndex + 1, onAllDone);
+
+                  }, 300);
                 });
               });
-            }, HOLD.s1);
-          });
+            });
+          }, cfg.holdMs);
         });
-      });
-    }, HOLD.s0);
+      }, 250);
+    });
+  });
+}
+
+/* ─────────────────────────────────────────────
+   CAMERA PROGRESS OVER TOTAL SEQUENCE
+───────────────────────────────────────────── */
+const TOTAL_SEQUENCE_MS = 26000; // approximate total intro duration
+
+function startCameraProgress() {
+  const t0 = performance.now();
+  camTicker = setInterval(() => {
+    sceneProg = clamp((performance.now() - t0) / TOTAL_SEQUENCE_MS, 0, 1);
+    if (sceneProg >= 1) {
+      clearInterval(camTicker);
+      camTicker = null;
+    }
+  }, 16);
+}
+
+/* ─────────────────────────────────────────────
+   INTRO BOOT
+───────────────────────────────────────────── */
+function startIntro() {
+  const nav  = document.getElementById('main-nav');
+  const wrap = document.getElementById('intro-wrap');
+
+  // Nav fades in
+  setTimeout(() => nav && nav.classList.add('show'), 800);
+
+  // Start camera journey
+  startCameraProgress();
+
+  // Spawn ambient garden flowers
+  startAmbientFlowers();
+
+  // Progress bar init
+  setProgress(0);
+
+  // Reset all gate stages to hidden (except stage 1)
+  ['gate-stage-2', 'gate-stage-3', 'gate-stage-4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'none'; el.style.opacity = '0'; }
+  });
+
+  // Reset gate 1 stage opacity
+  const gs1 = document.getElementById('gate-stage-1');
+  if (gs1) { gs1.style.display = 'flex'; gs1.style.opacity = '0'; }
+
+  // Hide gate-path until first gate
+  const gp = document.getElementById('gate-path');
+  if (gp) { gp.classList.remove('show'); gp.style.display = 'none'; }
+
+  // Run gate sequence → then show home
+  runGateSequence(0, () => {
+    stopAmbientFlowers();
+
+    // Fade out gate path
+    const path = document.getElementById('gate-path');
+    if (path) { path.classList.remove('show'); setTimeout(() => path.style.display = 'none', 600); }
+
+    // Mark intro done
+    if (wrap) wrap.classList.add('done');
+    if (nav) {
+      nav.style.transition = 'opacity .8s';
+      nav.style.opacity = '0';
+      nav.style.pointerEvents = 'none';
+    }
+
+    // Show Sara home after intro fades
+    setTimeout(showHome, 1400);
   });
 }
 
 /* ─────────────────────────────────────────────
    SARA HOME
 ───────────────────────────────────────────── */
-function showHome(){
-  const home=document.getElementById('sara-home');
-  if(!home) return;
-  home.style.display='flex';
-  // tiny delay so display:flex paints before opacity transition
-  setTimeout(()=>home.classList.add('visible'), 30);
-  makeParticles('home-canvas',{count:42,speed:.18,opacity:.18,color:'74,158,255',connected:true,dist:125});
+function showHome() {
+  const home = document.getElementById('sara-home');
+  if (!home) return;
+  home.style.display = 'flex';
+  setTimeout(() => home.classList.add('visible'), 30);
+  makeParticles('home-canvas', {
+    count: 48, speed: .16, opacity: .2, color: '232,133,154', connected: true, dist: 130,
+  });
 }
 
-document.getElementById('say-hello-btn')?.addEventListener('click',()=>{
-  const home=document.getElementById('sara-home');
-  if(home) home.classList.remove('visible');          // triggers opacity→0 transition
-  setTimeout(()=>{
-    if(home) home.style.display='none';
-    history.pushState({page:'chat'},'','#chat');
+document.getElementById('say-hello-btn')?.addEventListener('click', () => {
+  const home = document.getElementById('sara-home');
+  if (home) home.classList.remove('visible');
+  setTimeout(() => {
+    if (home) home.style.display = 'none';
+    history.pushState({ page: 'chat' }, '', '#chat');
     openChat();
   }, 950);
 });
@@ -550,159 +698,157 @@ document.getElementById('say-hello-btn')?.addEventListener('click',()=>{
 /* ─────────────────────────────────────────────
    CHAT
 ───────────────────────────────────────────── */
-let isChatting=false, chipsOn=true, chatInited=false;
+let isChatting = false, chipsOn = true, chatInited = false;
 
-function openChat(){
-  isChatting=true;
-  const cw=document.getElementById('chat-wrap');
-  if(!cw) return;
-  cw.style.display='flex';
-  setTimeout(()=>cw.classList.add('visible'), 30);
-  if(!chatInited){
-    makeParticles('chat-canvas',{count:36,speed:.2,opacity:.14,color:'74,158,255',connected:true,dist:105});
-    chatInited=true;
+function openChat() {
+  isChatting = true;
+  const cw = document.getElementById('chat-wrap');
+  if (!cw) return;
+  cw.style.display = 'flex';
+  setTimeout(() => cw.classList.add('visible'), 30);
+  if (!chatInited) {
+    makeParticles('chat-canvas', { count: 36, speed: .2, opacity: .14, color: '232,133,154', connected: true, dist: 105 });
+    chatInited = true;
   }
   setWave(true);
-  setTimeout(()=>{ setWave(false); typeBot("Hi there 🌿 I'm Sara. This is your quiet space — no rush, no judgment. What's been on your mind lately?"); }, 1500);
+  setTimeout(() => {
+    setWave(false);
+    typeBot("Hi there 🌸 I'm Sara. This is your quiet space — no rush, no judgment. What's been on your mind lately?");
+  }, 1500);
 }
 
-/* Status */
-const statusTxt=document.getElementById('hdr-stxt');
-const vwave=document.getElementById('vwave');
-function setWave(on){
-  if(vwave) vwave.classList.toggle('on',on);
-  if(statusTxt) statusTxt.textContent=on?'Thinking…':'Listening';
+const statusTxt = document.getElementById('hdr-stxt');
+const vwave     = document.getElementById('vwave');
+function setWave(on) {
+  if (vwave)     vwave.classList.toggle('on', on);
+  if (statusTxt) statusTxt.textContent = on ? 'Thinking…' : 'Listening';
 }
-function setWriting(){ if(statusTxt) statusTxt.textContent='Writing…'; }
+function setWriting() { if (statusTxt) statusTxt.textContent = 'Writing…'; }
 
-/* Mood detection */
-const MOODS=[
-  {w:['anxi','panic','scar','fear','worri'],     ic:'🌧',lb:'Tender'},
-  {w:['sad','cry','depress','lone','empty'],      ic:'🌙',lb:'Gentle'},
-  {w:['ang','mad','furi','frustrat','annoy'],     ic:'🔥',lb:'Heated'},
-  {w:['happ','joy','excit','grat','thank','amaz'],ic:'🌻',lb:'Warm'},
-  {w:['tired','exhaust','sleep','drain'],         ic:'🍃',lb:'Resting'},
-  {w:['overthink','stress','overwhelm'],          ic:'🌀',lb:'Swirling'},
+const MOODS = [
+  { w: ['anxi','panic','scar','fear','worri'],      ic: '🌧', lb: 'Tender' },
+  { w: ['sad','cry','depress','lone','empty'],       ic: '🌙', lb: 'Gentle' },
+  { w: ['ang','mad','furi','frustrat','annoy'],      ic: '🔥', lb: 'Heated' },
+  { w: ['happ','joy','excit','grat','thank','amaz'], ic: '🌸', lb: 'Warm'   },
+  { w: ['tired','exhaust','sleep','drain'],          ic: '🍃', lb: 'Resting'},
+  { w: ['overthink','stress','overwhelm'],           ic: '🌀', lb: 'Swirling'},
 ];
-function detectMood(t){ const s=t.toLowerCase(); for(const m of MOODS) if(m.w.some(w=>s.includes(w))) return m; return{ic:'🌿',lb:'Calm'}; }
-function applyMood(m){
-  const i=document.getElementById('mood-ico'),l=document.getElementById('mood-lbl');
-  if(i){i.style.transform='scale(1.7)';i.textContent=m.ic;setTimeout(()=>i.style.transform='',400);}
-  if(l) l.textContent=m.lb;
+function detectMood(t) {
+  const s = t.toLowerCase();
+  for (const m of MOODS) if (m.w.some(w => s.includes(w))) return m;
+  return { ic: '🌸', lb: 'Calm' };
+}
+function applyMood(m) {
+  const i = document.getElementById('mood-ico'), l = document.getElementById('mood-lbl');
+  if (i) { i.style.transform = 'scale(1.7)'; i.textContent = m.ic; setTimeout(() => i.style.transform = '', 400); }
+  if (l) l.textContent = m.lb;
 }
 
-/* Burst */
-function spawnBurst(x,y){
-  const cols=['#4a9eff','#2d7dd2','#1a4d8a','#ffffff','#8bc4ff'];
-  for(let i=0;i<13;i++){
-    const el=document.createElement('div'); el.className='burst';
-    const sz=3+Math.random()*5, ang=(i/13)*Math.PI*2, d=32+Math.random()*44;
-    el.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${cols[i%cols.length]};--tx:${Math.cos(ang)*d}px;--ty:${Math.sin(ang)*d}px;`;
+function spawnBurst(x, y) {
+  const cols = ['#e8859a', '#c84c68', '#f2a7b8', '#d4a96a', '#b896d8'];
+  for (let i = 0; i < 13; i++) {
+    const el = document.createElement('div'); el.className = 'burst';
+    const sz = 3 + Math.random() * 5, ang = (i / 13) * Math.PI * 2, d = 32 + Math.random() * 44;
+    el.style.cssText = `left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${cols[i%cols.length]};--tx:${Math.cos(ang)*d}px;--ty:${Math.sin(ang)*d}px;`;
     document.body.appendChild(el);
-    setTimeout(()=>el.remove(),700);
+    setTimeout(() => el.remove(), 700);
   }
 }
 
-/* Helpers */
-function hhMM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function hhMM() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-function appendUser(txt){
-  const area=document.getElementById('msgs');
-  const d=document.createElement('div'); d.className='msg user';
-  d.innerHTML=`<span>${esc(txt)}</span><span class="msg-ts">${hhMM()}</span><div class="msg-reacts">${['🌿','💚','🤍','✨'].map(e=>`<button class="react-e">${e}</button>`).join('')}</div>`;
-  area.appendChild(d); scroll(area);
+function appendUser(txt) {
+  const area = document.getElementById('msgs');
+  const d = document.createElement('div'); d.className = 'msg user';
+  d.innerHTML = `<span>${esc(txt)}</span><span class="msg-ts">${hhMM()}</span>
+    <div class="msg-reacts">${['🌸','💚','🤍','✨'].map(e => `<button class="react-e">${e}</button>`).join('')}</div>`;
+  area.appendChild(d); scrollMsg(area);
 }
 
-function typeBot(txt){
-  const area=document.getElementById('msgs');
+function typeBot(txt) {
+  const area = document.getElementById('msgs');
   setWriting();
-  const d=document.createElement('div'); d.className='msg bot';
-  const sp=document.createElement('span');
-  const ts=document.createElement('span'); ts.className='msg-ts';
-  const rc=document.createElement('div'); rc.className='msg-reacts';
-  rc.innerHTML=['🌿','💚','🤍','✨'].map(e=>`<button class="react-e">${e}</button>`).join('');
-  d.append(sp,ts,rc); area.appendChild(d); scroll(area);
-  let i=0; const spd=Math.max(15,Math.min(34,2200/txt.length));
-  (function tick(){
-    if(i<txt.length){ sp.textContent+=txt[i++]; scroll(area); setTimeout(tick,spd); }
-    else{ ts.textContent=hhMM(); setWave(false); if(sendBtn) sendBtn.disabled=false; }
+  const d = document.createElement('div'); d.className = 'msg bot';
+  const sp = document.createElement('span');
+  const ts = document.createElement('span'); ts.className = 'msg-ts';
+  const rc = document.createElement('div'); rc.className = 'msg-reacts';
+  rc.innerHTML = ['🌸','💚','🤍','✨'].map(e => `<button class="react-e">${e}</button>`).join('');
+  d.append(sp, ts, rc); area.appendChild(d); scrollMsg(area);
+  let i = 0;
+  const spd = Math.max(15, Math.min(34, 2200 / txt.length));
+  (function tick() {
+    if (i < txt.length) { sp.textContent += txt[i++]; scrollMsg(area); setTimeout(tick, spd); }
+    else { ts.textContent = hhMM(); setWave(false); const sb = document.getElementById('send-btn'); if (sb) sb.disabled = false; }
   })();
 }
-function scroll(el){ if(el.scrollHeight-el.scrollTop-el.clientHeight<100) el.scrollTop=el.scrollHeight; }
+function scrollMsg(el) { if (el.scrollHeight - el.scrollTop - el.clientHeight < 100) el.scrollTop = el.scrollHeight; }
 
-/* Send */
-const chatIn=document.getElementById('chat-in');
-const sendBtn=document.getElementById('send-btn');
+const chatIn  = document.getElementById('chat-in');
+const sendBtn = document.getElementById('send-btn');
 
-async function handleSend(){
-  const txt=chatIn.value.trim(); if(!txt) return;
+async function handleSend() {
+  const txt = chatIn.value.trim(); if (!txt) return;
   applyMood(detectMood(txt));
   appendUser(txt);
-  chatIn.value=''; chatIn.style.height='auto';
-  if(sendBtn) sendBtn.disabled=true;
-  if(chipsOn){ document.getElementById('chips')?.classList.add('gone'); chipsOn=false; }
-  const r=sendBtn?.getBoundingClientRect();
-  if(r) spawnBurst(r.left+r.width/2,r.top+r.height/2);
+  chatIn.value = ''; chatIn.style.height = 'auto';
+  if (sendBtn) sendBtn.disabled = true;
+  if (chipsOn) { document.getElementById('chips')?.classList.add('gone'); chipsOn = false; }
+  const r = sendBtn?.getBoundingClientRect();
+  if (r) spawnBurst(r.left + r.width / 2, r.top + r.height / 2);
   sendBtn?.classList.add('fired');
-  setTimeout(()=>sendBtn?.classList.remove('fired'),460);
+  setTimeout(() => sendBtn?.classList.remove('fired'), 460);
   setWave(true);
-  try{
-    const sys='You are Sara. A warm, empathetic, non-judgmental listener. Reply in 2-3 sentences max. Be human and gentle. Never use lists.';
-    const res=await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(sys+' User: "'+txt+'"')}`);
-    const ai=await res.text();
+  try {
+    const sys = 'You are Sara. A warm, empathetic, non-judgmental listener. Reply in 2-3 sentences max. Be human and gentle. Never use lists.';
+    const res = await fetch(`https://text.pollinations.ai/prompt/${encodeURIComponent(sys + ' User: "' + txt + '"')}`);
+    const ai = await res.text();
     setWave(false);
-    setTimeout(()=>typeBot(ai.trim()),280);
-  }catch{
+    setTimeout(() => typeBot(ai.trim()), 280);
+  } catch {
     setWave(false);
-    typeBot("I'm right here 🌿 The connection wavered but I didn't go anywhere.");
-    if(sendBtn) sendBtn.disabled=false;
+    typeBot("I'm right here 🌸 The connection wavered but I didn't go anywhere.");
+    if (sendBtn) sendBtn.disabled = false;
   }
 }
 
-sendBtn?.addEventListener('click',handleSend);
-chatIn?.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} });
-chatIn?.addEventListener('input',()=>{
-  chatIn.style.height='auto';
-  chatIn.style.height=Math.min(chatIn.scrollHeight,110)+'px';
-  if(sendBtn) sendBtn.disabled=chatIn.value.trim()==='';
+sendBtn?.addEventListener('click', handleSend);
+chatIn?.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+chatIn?.addEventListener('input', () => {
+  chatIn.style.height = 'auto';
+  chatIn.style.height = Math.min(chatIn.scrollHeight, 110) + 'px';
+  if (sendBtn) sendBtn.disabled = chatIn.value.trim() === '';
 });
-document.querySelectorAll('.chip').forEach(c=>{
-  c.addEventListener('click',()=>{ if(!chatIn)return; chatIn.value=c.dataset.msg; if(sendBtn)sendBtn.disabled=false; handleSend(); });
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => { if (!chatIn) return; chatIn.value = c.dataset.msg; if (sendBtn) sendBtn.disabled = false; handleSend(); });
 });
 
-/* Back → farewell */
-window.addEventListener('popstate',()=>{ if(isChatting) doFarewell(); });
+window.addEventListener('popstate', () => { if (isChatting) doFarewell(); });
 
-function doFarewell(){
-  isChatting=false;
-  const cw=document.getElementById('chat-wrap');
-  const fw=document.getElementById('farewell');
+function doFarewell() {
+  isChatting = false;
+  const cw = document.getElementById('chat-wrap');
+  const fw = document.getElementById('farewell');
 
-  // Fade out chat
-  if(cw) cw.classList.remove('visible');
-  setTimeout(()=>{
-    if(cw) cw.style.display='none';
+  if (cw) cw.classList.remove('visible');
+  setTimeout(() => {
+    if (cw) cw.style.display = 'none';
+    if (fw) { fw.style.display = 'flex'; setTimeout(() => fw.classList.add('visible'), 30); }
 
-    // Show farewell
-    if(fw){ fw.style.display='flex'; setTimeout(()=>fw.classList.add('visible'),30); }
-
-    // After 3s dismiss farewell, show home
-    setTimeout(()=>{
-      if(fw) fw.classList.remove('visible');
-      setTimeout(()=>{
-        if(fw) fw.style.display='none';
-
-        // Reset chat state
-        chipsOn=true; chatInited=false;
-        const chips=document.getElementById('chips');
-        if(chips) chips.classList.remove('gone');
-        const msgs=document.getElementById('msgs');
-        if(msgs) msgs.innerHTML='<div class="day-sep"><span>Today</span></div>';
-        if(sendBtn) sendBtn.disabled=true;
+    setTimeout(() => {
+      if (fw) fw.classList.remove('visible');
+      setTimeout(() => {
+        if (fw) fw.style.display = 'none';
+        chipsOn = true; chatInited = false;
+        const chips = document.getElementById('chips');
+        if (chips) chips.classList.remove('gone');
+        const msgs = document.getElementById('msgs');
+        if (msgs) msgs.innerHTML = '<div class="day-sep"><span>Today</span></div>';
+        if (sendBtn) sendBtn.disabled = true;
         setWave(false);
-
-        // Show home
         showHome();
       }, 950);
     }, 3200);
@@ -710,33 +856,37 @@ function doFarewell(){
 }
 
 /* ─────────────────────────────────────────────
-   2D PARTICLE FIELD  (home + chat backgrounds)
+   2D PARTICLE FIELD
 ───────────────────────────────────────────── */
-function makeParticles(id, cfg){
-  const cv=document.getElementById(id); if(!cv) return;
-  const ctx=cv.getContext('2d');
-  const c=Object.assign({count:48,speed:.24,size:1.2,opacity:.28,color:'80,140,82',connected:true,dist:115},cfg);
-  let W=0,H=0;
-  function resize(){ W=cv.width=cv.offsetWidth||window.innerWidth; H=cv.height=cv.offsetHeight||window.innerHeight; }
+function makeParticles(id, cfg) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const c = Object.assign({ count: 48, speed: .24, size: 1.2, opacity: .28, color: '232,133,154', connected: true, dist: 115 }, cfg);
+  let W = 0, H = 0;
+  function resize() { W = cv.width = cv.offsetWidth || window.innerWidth; H = cv.height = cv.offsetHeight || window.innerHeight; }
   resize(); new ResizeObserver(resize).observe(cv);
-  const pts=[];
-  for(let i=0;i<c.count;i++) pts.push({x:rand(0,W||800),y:rand(0,H||600),vx:(Math.random()-.5)*c.speed,vy:(Math.random()-.5)*c.speed,r:.4+Math.random()*c.size,o:.06+Math.random()*c.opacity});
-  ;(function draw(){
+  const pts = [];
+  for (let i = 0; i < c.count; i++) pts.push({
+    x: rand(0, W || 800), y: rand(0, H || 600),
+    vx: (Math.random() - .5) * c.speed, vy: (Math.random() - .5) * c.speed,
+    r: .4 + Math.random() * c.size, o: .06 + Math.random() * c.opacity,
+  });
+  (function draw() {
     requestAnimationFrame(draw);
-    ctx.clearRect(0,0,W,H);
-    for(let i=0;i<pts.length;i++){
-      const p=pts[i];
-      p.x+=p.vx; p.y+=p.vy;
-      if(p.x<0)p.x=W; else if(p.x>W)p.x=0;
-      if(p.y<0)p.y=H; else if(p.y>H)p.y=0;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${c.color},${p.o})`; ctx.fill();
-      if(c.connected){
-        for(let j=i+1;j<pts.length;j++){
-          const q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
-          if(d<c.dist){
-            ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
-            ctx.strokeStyle=`rgba(${c.color},${(1-d/c.dist)*.07})`; ctx.lineWidth=.5; ctx.stroke();
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${c.color},${p.o})`; ctx.fill();
+      if (c.connected) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const q = pts[j], d = Math.hypot(p.x - q.x, p.y - q.y);
+          if (d < c.dist) {
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(${c.color},${(1 - d / c.dist) * .06})`; ctx.lineWidth = .5; ctx.stroke();
           }
         }
       }
@@ -747,8 +897,8 @@ function makeParticles(id, cfg){
 /* ─────────────────────────────────────────────
    BOOT
 ───────────────────────────────────────────── */
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(startIntro,200));
-}else{
-  setTimeout(startIntro,200);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(startIntro, 200));
+} else {
+  setTimeout(startIntro, 200);
 }
