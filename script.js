@@ -5,27 +5,68 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xdceaf5, 0.0007); 
+    // Soft twilight blue fog 
+    scene.fog = new THREE.FogExp2(0x142433, 0.0007); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
+    // Cool, soft ambient lighting (gentle on the eyes)
+    const ambientLight = new THREE.AmbientLight(0xdbebf9, 0.7); 
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); 
+    const dirLight = new THREE.DirectionalLight(0xaad4eb, 1.0); 
     dirLight.position.set(200, 500, 300);
     scene.add(dirLight);
 
+    // --- Ancient Solid Wood Material ---
     const woodMat = new THREE.MeshStandardMaterial({ 
-        color: 0x5c4033, 
-        roughness: 0.8, 
-        metalness: 0.1 
+        color: 0x241118, 
+        roughness: 0.95, 
+        metalness: 0.05 
     });
 
     const windowsArray = [];
+
+    // --- Flower Generation Helper ---
+    function createNaturalFlower(colorHex) {
+        const flowerGroup = new THREE.Group();
+
+        // Green Stem
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, roughness: 0.8 });
+        const stemGeo = new THREE.CylinderGeometry(1.5, 1.5, 25);
+        const stem = new THREE.Mesh(stemGeo, stemMat);
+        stem.position.y = 12.5;
+        flowerGroup.add(stem);
+
+        // Yellow/Orange Center
+        const centerMat = new THREE.MeshStandardMaterial({ color: 0xffa500, roughness: 0.5 });
+        const centerGeo = new THREE.SphereGeometry(3.5);
+        const center = new THREE.Mesh(centerGeo, centerMat);
+        center.position.y = 25;
+        center.scale.z = 0.5; // Flatten the center slightly
+        flowerGroup.add(center);
+
+        // Petals
+        const petalMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.4 });
+        const petalGeo = new THREE.SphereGeometry(5);
+        const petalCount = 5 + Math.floor(Math.random() * 3); // 5 to 7 petals
+        
+        for(let i = 0; i < petalCount; i++) {
+            const angle = (i / petalCount) * Math.PI * 2;
+            const petal = new THREE.Mesh(petalGeo, petalMat);
+            // Arrange petals around the center
+            petal.position.set(Math.cos(angle) * 4.5, 25 + Math.sin(angle) * 4.5, 1);
+            petal.scale.set(1, 1, 0.3); // Flatten petals
+            // Tilt petals slightly backward for a blooming effect
+            petal.rotation.x = -0.2; 
+            flowerGroup.add(petal);
+        }
+        
+        return flowerGroup;
+    }
 
     function buildSolidWoodenWindow(zPos, triggerTime) {
         const windowGroup = new THREE.Group();
@@ -51,6 +92,55 @@ document.addEventListener("DOMContentLoaded", () => {
         rightOuter.position.x = width / 2 + frameThick / 2;
 
         outerFrame.add(topOuter, botOuter, leftOuter, rightOuter);
+        
+        // --- Planter Box & Flowers ---
+        const planterMat = new THREE.MeshStandardMaterial({ color: 0x1a0d07, roughness: 0.95 });
+        const planterDepth = 60;
+        const planter = new THREE.Mesh(new THREE.BoxGeometry(width + 20, 50, planterDepth), planterMat);
+        // Positioned right in front of the bottom frame sill
+        planter.position.set(0, -height / 2 - frameThick / 2, frameDepth / 2 + planterDepth / 2);
+        
+        // Flower Palette: Soft natural pinks, purples, light blues, and whites
+        const flowerColors = [0xffb6c1, 0xd8bfd8, 0xadd8e6, 0xffffff, 0xffc0cb]; 
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x3b7a33, roughness: 0.8 });
+        
+        // Populate Planter with Flowers
+        for(let i = 0; i < 20; i++) {
+            const color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+            const flower = createNaturalFlower(color);
+            
+            // Randomize position within the planter
+            flower.position.set(
+                (Math.random() - 0.5) * (width - 40), 
+                20, 
+                (Math.random() - 0.5) * (planterDepth - 20)
+            );
+            
+            // Randomly tilt stems for a natural overgrown look
+            flower.rotation.z = (Math.random() - 0.5) * 0.6;
+            flower.rotation.x = (Math.random() - 0.5) * 0.4;
+            
+            // Scale slightly to vary sizes
+            const scale = 0.8 + Math.random() * 0.5;
+            flower.scale.set(scale, scale, scale);
+            
+            planter.add(flower);
+        }
+
+        // Add some scattered foliage/leaves to fill it out
+        for(let i = 0; i < 40; i++) {
+            const leaf = new THREE.Mesh(new THREE.ConeGeometry(4, 15, 4), leafMat);
+            leaf.position.set(
+                (Math.random() - 0.5) * width, 
+                15 + Math.random() * 10, 
+                (Math.random() - 0.5) * (planterDepth - 10)
+            );
+            // Random natural rotations for leaves
+            leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            planter.add(leaf);
+        }
+
+        outerFrame.add(planter);
         windowGroup.add(outerFrame);
 
         const doorWidth = width / 2;
@@ -61,6 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const doorBase = new THREE.Group();
 
             const backPanel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 4, height - 4, 12), woodMat);
+
             const braceThick = 18;
             const topBrace = new THREE.Mesh(new THREE.BoxGeometry(doorWidth - 10, 25, braceThick), woodMat);
             topBrace.position.set(0, height / 2 - 40, 0);
@@ -96,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buildSolidWoodenWindow(-1400, 0.43); 
     buildSolidWoodenWindow(-2150, 0.68); 
 
+    // Soft sky-blue floating particles
     const particles = [];
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 200;
@@ -106,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     const particleMat = new THREE.PointsMaterial({
-        size: 5, color: 0x5c98ce, transparent: true, opacity: 0.6, blending: THREE.NormalBlending
+        size: 4, color: 0x76b3e8, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
     });
     
     const particleSystem = new THREE.Points(particleGeo, particleMat);
@@ -170,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
+        // Animate Solid Wooden Windows Swinging Open Inward (Backwards)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
             win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
@@ -190,19 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // --- 3. Audio & Chat Logic ---
-    const introMusic = document.getElementById('intro-music');
-    introMusic.volume = 0.3; // Keep the music soft and gentle
-
-    // Browsers block autoplay until the user interacts with the page.
-    // This listener starts the music as soon as the user clicks anywhere on the screen.
-    document.body.addEventListener('click', function playOnInteraction() {
-        if (!isChatting) {
-            introMusic.play().catch(e => console.log("Audio play blocked by browser."));
-        }
-        document.body.removeEventListener('click', playOnInteraction);
-    }, { once: true });
-
+    // --- 3. Chatbot NLP & Navigation History Logic ---
     const sayHelloBtn = document.getElementById('say-hello-btn');
     const introSequence = document.getElementById('intro-container');
     const chatInterface = document.getElementById('chat-interface');
@@ -214,16 +295,6 @@ document.addEventListener("DOMContentLoaded", () => {
     sayHelloBtn.addEventListener('click', () => {
         isChatting = true;
         history.pushState({ page: 'chat' }, 'Chat with Sara', '#chat');
-
-        // Fade out the music gently
-        let fadeOut = setInterval(() => {
-            if (introMusic.volume > 0.03) {
-                introMusic.volume -= 0.03;
-            } else {
-                introMusic.pause();
-                clearInterval(fadeOut);
-            }
-        }, 100);
 
         introSequence.style.display = 'none'; 
         chatInterface.classList.remove('hidden'); 
@@ -249,10 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 introSequence.style.display = 'flex';
                 autoProgress = 1.0; 
-                
-                // Bring the music back when returning to the intro
-                introMusic.volume = 0.3;
-                introMusic.play();
             }, 1000);
             
         }, 3000); 
@@ -301,4 +368,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-                                                              
+                
