@@ -5,32 +5,32 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    // Warm plum fog to match the eye-care background
-    scene.fog = new THREE.FogExp2(0x3d1026, 0.0007); 
+    // Soft twilight blue fog 
+    scene.fog = new THREE.FogExp2(0x142433, 0.0007); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Warm, dim lighting (Low blue-light emission)
-    const ambientLight = new THREE.AmbientLight(0xffc2c2, 0.6); 
+    // Cool, soft ambient lighting (gentle on the eyes)
+    const ambientLight = new THREE.AmbientLight(0xdbebf9, 0.6); 
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffa1a1, 1.2); 
+    const dirLight = new THREE.DirectionalLight(0xaad4eb, 1.0); 
     dirLight.position.set(200, 500, 300);
     scene.add(dirLight);
 
     // --- Ancient Solid Wood Material ---
+    // Kept the wood a deep, rich dark brown for nice contrast against the blue sky
     const woodMat = new THREE.MeshStandardMaterial({ 
-        color: 0x241118, // Very dark, warm mahogany wood
+        color: 0x241118, 
         roughness: 0.95, 
         metalness: 0.05 
     });
 
     const windowsArray = [];
 
-    // Function to build a fully solid wooden window/shutter
     function buildSolidWoodenWindow(zPos, triggerTime) {
         const windowGroup = new THREE.Group();
         windowGroup.position.z = zPos;
@@ -40,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const frameThick = 30;
         const frameDepth = 40;
 
-        // --- Outer Heavy Wooden Frame ---
         const outerFrame = new THREE.Group();
         
         const topOuter = new THREE.Mesh(new THREE.BoxGeometry(width + frameThick*2, frameThick, frameDepth), woodMat);
@@ -60,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const doorWidth = width / 2;
 
-        // Helper function to create one side of a solid wooden shutter
         function createSolidDoor(isLeft) {
             const doorGroup = new THREE.Group();
             const direction = isLeft ? 1 : -1;
@@ -99,12 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
         windowsArray.push({ left: leftHinge, right: rightHinge, trigger: triggerTime });
     }
 
-    // Place the 3 solid wooden windows
     buildSolidWoodenWindow(-650, 0.18);  
     buildSolidWoodenWindow(-1400, 0.43); 
     buildSolidWoodenWindow(-2150, 0.68); 
 
-    // Warm rose-gold floating particles (soft on the eyes)
+    // Soft sky-blue floating particles
     const particles = [];
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 200;
@@ -115,13 +112,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
     const particleMat = new THREE.PointsMaterial({
-        size: 4, color: 0xffaebc, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+        size: 4, color: 0x76b3e8, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
     });
     
     const particleSystem = new THREE.Points(particleGeo, particleMat);
     scene.add(particleSystem);
 
-    // --- 2. Auto-Animation & Progression Logic (SLOWER) ---
+    // --- 2. Auto-Animation & Progression Logic ---
     let autoProgress = 0;   
     let targetCameraZ = 0;
     let isChatting = false;
@@ -179,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
 
-        // Animate Solid Wooden Windows Swinging Open Inward (Backwards)
         windowsArray.forEach((win) => {
             const targetRot = autoProgress >= win.trigger ? Math.PI * 0.65 : 0;
             win.left.rotation.y += (targetRot - win.left.rotation.y) * 0.015; 
@@ -285,4 +281,4 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') handleSend();
     });
 });
-    
+                                  
